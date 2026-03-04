@@ -5,6 +5,7 @@
 import { CronJob } from 'cron'
 import { Pool } from 'pg'
 import Redis from 'ioredis'
+import { createRevenueReportService } from '@revenue/infrastructure/revenue-routes'
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -12,13 +13,23 @@ const pool = new Pool({
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379')
 
+// FR-06: Revenue Report Service instance for cron
+const revenueReportService = createRevenueReportService(pool)
+
 // Revenue Report — 1st of every month at 09:00 (PS-05)
 const revenueReportCron = new CronJob(
   '0 9 1 * *',
   async () => {
     console.log('[Worker] Starting monthly Revenue Report generation...')
-    // TODO: Implement RevenueReportService.generateMonthlyReports()
-    // Reference: docs/pseudocode.md PS-05
+    try {
+      const result = await revenueReportService.generateMonthlyReports()
+      console.log(`[Worker] Revenue Reports: ${result.generated} generated, ${result.errors.length} errors`)
+      if (result.errors.length > 0) {
+        console.error('[Worker] Revenue Report errors:', result.errors)
+      }
+    } catch (error) {
+      console.error('[Worker] Revenue Report generation failed:', error)
+    }
   },
   null,
   false,

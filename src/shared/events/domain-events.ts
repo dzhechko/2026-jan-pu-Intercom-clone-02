@@ -75,6 +75,15 @@ export interface RevenueAttributed extends DomainEvent {
   readonly dealValue: number
 }
 
+export interface DealAttributed extends DomainEvent {
+  readonly type: 'DealAttributed'
+  readonly attributionId: string
+  readonly dealId: string
+  readonly dealValue: number
+  readonly pqlDetectionId: string
+  readonly confidence: number
+}
+
 // BC-05: IAM Events
 export interface OperatorInvited extends DomainEvent {
   readonly type: 'OperatorInvited'
@@ -102,5 +111,6 @@ export type KommuniqEvent =
   | PQLFeedbackRecorded
   | ReportGenerated
   | RevenueAttributed
+  | DealAttributed
   | OperatorInvited
   | PQLNotificationSent

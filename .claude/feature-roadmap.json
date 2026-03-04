@@ -78,7 +78,7 @@
       "description": "Push/email to operator on every new hot lead (real-time).",
       "priority": "should",
       "milestone": "M1",
-      "status": "next",
+      "status": "done",
       "bc": ["notifications"],
       "depends_on": ["FR-02"]
     },
@@ -98,7 +98,7 @@
       "description": "Dashboard: dialog count, PQL%, response time, PQL->deal conversion.",
       "priority": "must",
       "milestone": "M2",
-      "status": "planned",
+      "status": "next",
       "bc": ["revenue"],
       "depends_on": ["FR-06"]
     },
@@ -108,7 +108,7 @@
       "description": "Incoming via Messenger Max MCP (Cloud.ru). Russian corporate messenger.",
       "priority": "should",
       "milestone": "M2",
-      "status": "next",
+      "status": "done",
       "bc": ["conversation", "integration"],
       "depends_on": ["FR-07"]
     },
@@ -118,7 +118,7 @@
       "description": "Up to 10 operators, roles: admin/operator, assignment queue.",
       "priority": "should",
       "milestone": "M2",
-      "status": "next",
+      "status": "done",
       "bc": ["iam", "conversation"],
       "depends_on": ["IAM-01", "FR-07"]
     },
@@ -138,7 +138,7 @@
       "description": "On PQL deal close — auto-attribute in Revenue Report via amoCRM MCP.",
       "priority": "should",
       "milestone": "M2",
-      "status": "planned",
+      "status": "next",
       "bc": ["revenue", "integration"],
       "depends_on": ["FR-06"]
     },
@@ -148,7 +148,7 @@
       "description": "Hotkeys for quick replies, status change, escalation.",
       "priority": "should",
       "milestone": "M2",
-      "status": "next",
+      "status": "done",
       "bc": ["conversation"],
       "depends_on": ["FR-07"]
     }
