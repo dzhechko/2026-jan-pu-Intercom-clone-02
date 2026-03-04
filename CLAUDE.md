@@ -116,6 +116,16 @@ src/{bc-name}/
 | `code-reviewer` | Quality review with edge cases from Refinement.md |
 | `architect` | System design decisions using Architecture docs |
 
+## MANDATORY Development Rules
+
+> **These rules are NON-NEGOTIABLE. Every feature implementation MUST follow them.**
+
+1. **Document first, code second.** Always create `docs/plans/{feature-id}-{name}.md` BEFORE writing code.
+2. **One feature = one commit + push.** Never batch features. Push after every feature.
+3. **Use the skill chain.** `/next` → `/go` → `/plan`|`/feature` → commit → push → `/next done`.
+4. **Never bypass /go.** Do not launch raw agents to implement features. All work goes through `/go`.
+5. **Follow /feature lifecycle.** Plan → Validate → Implement → Review. All 4 phases required.
+
 ## Git Workflow
 
 ```
@@ -128,6 +138,11 @@ docs(scope): description  # documentation
 ```
 
 Where `bc` = conversation | pql | revenue | integration | iam | notifications
+
+**Commit + push frequency:**
+- After EACH feature implementation
+- After documentation generation
+- Before ending any session
 
 ## Domain Glossary
 
