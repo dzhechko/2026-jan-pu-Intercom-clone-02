@@ -118,7 +118,7 @@
       "description": "Up to 10 operators, roles: admin/operator, assignment queue.",
       "priority": "should",
       "milestone": "M2",
-      "status": "next",
+      "status": "done",
       "bc": ["iam", "conversation"],
       "depends_on": ["IAM-01", "FR-07"]
     },
