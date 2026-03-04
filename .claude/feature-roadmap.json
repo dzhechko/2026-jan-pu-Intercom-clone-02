@@ -18,7 +18,7 @@
       "description": "JS widget for embedding on client sites. Web chat support. Client branding.",
       "priority": "must",
       "milestone": "M1",
-      "status": "next",
+      "status": "done",
       "bc": ["conversation"],
       "depends_on": []
     },
@@ -38,7 +38,7 @@
       "description": "Unified inbox: queue + sidebar (Memory AI) + PQL panel + quick replies.",
       "priority": "must",
       "milestone": "M1",
-      "status": "planned",
+      "status": "next",
       "bc": ["conversation", "pql"],
       "depends_on": ["FR-04", "IAM-01"]
     },
