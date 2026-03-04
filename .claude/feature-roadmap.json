@@ -1,0 +1,156 @@
+{
+  "project": "kommuniq",
+  "updated_at": "2026-03-04",
+  "features": [
+    {
+      "id": "FR-01",
+      "name": "PQL Detector v1 (rule-based)",
+      "description": "15+ signal patterns for purchase intent detection. Accuracy >= 65% on synthetic data. < 2 sec latency.",
+      "priority": "must",
+      "milestone": "M1",
+      "status": "done",
+      "bc": ["pql"],
+      "depends_on": []
+    },
+    {
+      "id": "FR-04",
+      "name": "Chat Widget",
+      "description": "JS widget for embedding on client sites. Web chat support. Client branding.",
+      "priority": "must",
+      "milestone": "M1",
+      "status": "next",
+      "bc": ["conversation"],
+      "depends_on": []
+    },
+    {
+      "id": "IAM-01",
+      "name": "Tenant + Operator + JWT + RLS",
+      "description": "Multi-tenant IAM with JWT auth, PostgreSQL RLS policies, operator roles.",
+      "priority": "must",
+      "milestone": "M1",
+      "status": "next",
+      "bc": ["iam"],
+      "depends_on": []
+    },
+    {
+      "id": "FR-07",
+      "name": "Operator Workspace",
+      "description": "Unified inbox: queue + sidebar (Memory AI) + PQL panel + quick replies.",
+      "priority": "must",
+      "milestone": "M1",
+      "status": "planned",
+      "bc": ["conversation", "pql"],
+      "depends_on": ["FR-04", "IAM-01"]
+    },
+    {
+      "id": "FR-02",
+      "name": "PQL Flag in Dialog",
+      "description": "Operator sees fire-emoji label + explanation 'Why lead' in sidebar. Click-through to CRM card.",
+      "priority": "must",
+      "milestone": "M1",
+      "status": "planned",
+      "bc": ["pql", "conversation"],
+      "depends_on": ["FR-01", "FR-07"]
+    },
+    {
+      "id": "FR-03",
+      "name": "Memory AI (CRM Context)",
+      "description": "Auto-load from amoCRM before operator responds: deals, contacts, history. Via amoCRM MCP.",
+      "priority": "must",
+      "milestone": "M1",
+      "status": "planned",
+      "bc": ["pql", "integration"],
+      "depends_on": ["FR-07"]
+    },
+    {
+      "id": "FR-05",
+      "name": "Telegram Channel",
+      "description": "Incoming via Telegram Business/Bot API. Unified queue with web chat.",
+      "priority": "must",
+      "milestone": "M1",
+      "status": "planned",
+      "bc": ["conversation", "integration"],
+      "depends_on": ["FR-07"]
+    },
+    {
+      "id": "FR-11",
+      "name": "PQL Pulse Notifications",
+      "description": "Push/email to operator on every new hot lead (real-time).",
+      "priority": "should",
+      "milestone": "M1",
+      "status": "planned",
+      "bc": ["notifications"],
+      "depends_on": ["FR-02"]
+    },
+    {
+      "id": "FR-06",
+      "name": "Revenue Intelligence Report",
+      "description": "Automatic PDF/email monthly: X leads found, Y closed, RUB Z revenue attributed.",
+      "priority": "must",
+      "milestone": "M2",
+      "status": "planned",
+      "bc": ["revenue"],
+      "depends_on": ["FR-02", "FR-03"]
+    },
+    {
+      "id": "FR-08",
+      "name": "Basic Analytics Dashboard",
+      "description": "Dashboard: dialog count, PQL%, response time, PQL->deal conversion.",
+      "priority": "must",
+      "milestone": "M2",
+      "status": "planned",
+      "bc": ["revenue"],
+      "depends_on": ["FR-06"]
+    },
+    {
+      "id": "FR-09",
+      "name": "VK Max / Messenger Max MCP",
+      "description": "Incoming via Messenger Max MCP (Cloud.ru). Russian corporate messenger.",
+      "priority": "should",
+      "milestone": "M2",
+      "status": "planned",
+      "bc": ["conversation", "integration"],
+      "depends_on": ["FR-07"]
+    },
+    {
+      "id": "FR-13",
+      "name": "Multi-operator",
+      "description": "Up to 10 operators, roles: admin/operator, assignment queue.",
+      "priority": "should",
+      "milestone": "M2",
+      "status": "planned",
+      "bc": ["iam", "conversation"],
+      "depends_on": ["IAM-01", "FR-07"]
+    },
+    {
+      "id": "FR-10",
+      "name": "PQL ML v1",
+      "description": "After 1K dialogs — retrain on real data. Accuracy >= 75%.",
+      "priority": "should",
+      "milestone": "M3",
+      "status": "planned",
+      "bc": ["pql"],
+      "depends_on": ["FR-01", "FR-02"]
+    },
+    {
+      "id": "FR-12",
+      "name": "amoCRM Auto-Update",
+      "description": "On PQL deal close — auto-attribute in Revenue Report via amoCRM MCP.",
+      "priority": "should",
+      "milestone": "M2",
+      "status": "planned",
+      "bc": ["revenue", "integration"],
+      "depends_on": ["FR-06"]
+    },
+    {
+      "id": "FR-14",
+      "name": "Keyboard Shortcuts",
+      "description": "Hotkeys for quick replies, status change, escalation.",
+      "priority": "should",
+      "milestone": "M2",
+      "status": "planned",
+      "bc": ["conversation"],
+      "depends_on": ["FR-07"]
+    }
+  ]
+}

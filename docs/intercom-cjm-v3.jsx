@@ -1,0 +1,930 @@
+import { useState } from "react";
+
+/* ═══════════════════════════════════════════════════════
+   CJM PROTOTYPE: Российский аналог Intercom
+   Company: Intercom → Clone "КоммуниQ" (Customer AI Platform)
+   Industry: Customer Communication Platform / Support SaaS
+   Geography: Россия / СНГ
+   Mode: DEEP
+   Generated from M1+M2 analysis
+═══════════════════════════════════════════════════════ */
+
+const COMPANY = "КоммуниQ";
+const TAGLINE = "AI-платформа клиентских коммуникаций для СНГ-рынка";
+
+const VARIANTS = {
+  A: {
+    name: "AI-Агент",
+    emoji: "🤖",
+    color: "#2563eb",
+    bg: "bg-blue-50", bdr: "border-blue-200", txt: "text-blue-700",
+    accent: "bg-blue-600 text-white",
+    accentHover: "hover:bg-blue-700",
+    badge: "bg-blue-100 text-blue-800",
+    tagline: "AI закрывает тикеты — ты занимаешься бизнесом",
+    hypothesis: "AI auto-resolution = главный WOW = конверсия",
+    segment: "SaaS стартапы / PLG компании",
+    risk: "Нужен confidence threshold — AI иногда ошибается",
+
+    landing: {
+      hl: "Масштабируй поддержку без найма агентов",
+      sub: "AI-агент отвечает на 60%+ обращений за секунды. Команда занимается только сложными задачами.",
+      cta: "Подключить AI-агента бесплатно",
+      proof: ["Внедрение за 15 минут", "60%+ авто-решений с первой недели", "Без кода — загрузи FAQ"],
+    },
+
+    onboarding: {
+      style: "Guided Setup Wizard — 3 шага",
+      q1: "Вставьте код виджета на сайт (или выберите вашу CMS)",
+      q2: "Загрузите FAQ или базу знаний (PDF, Notion, Google Docs)",
+      q3: "AI обучается — первые авто-ответы через 10 минут",
+      progress: ["Виджет подключён ✅", "База знаний загружена ✅", "AI обучается... 73%"],
+    },
+
+    aha: {
+      title: "🤖 AI закрыл 3 тикета пока вы пили кофе",
+      subtitle: "За последний час — без единого агента",
+      tickets: [
+        { q: "Как сменить тариф?", a: "AI ответил за 4 сек", conf: "97%", status: "✅ Закрыт" },
+        { q: "Где скачать счёт?", a: "AI ответил за 2 сек", conf: "99%", status: "✅ Закрыт" },
+        { q: "Интеграция с 1С?", a: "Передано агенту", conf: "41%", status: "👤 Человек" },
+      ],
+      kpi: "62% обращений закрыто AI сегодня",
+      wow: "Команда из 2 агентов справляется с нагрузкой 10",
+    },
+
+    dash: {
+      hook: "AI Performance Dashboard",
+      stats: [
+        { label: "AI-решений сегодня", val: "62%", trend: "↑ +8% vs прошлая неделя", color: "text-blue-600" },
+        { label: "Среднее время ответа", val: "4 сек", trend: "↓ было 3.5 часа", color: "text-emerald-600" },
+        { label: "Агентов задействовано", val: "2/6", trend: "Остальные свободны", color: "text-violet-600" },
+        { label: "CSAT", val: "4.7 / 5", trend: "↑ +0.4 с внедрением AI", color: "text-amber-600" },
+      ],
+      ai_queue: "3 активных | 17 AI-закрытых | 0 просроченных",
+    },
+
+    pay: {
+      when: "После первых AI-закрытых тикетов (день 1)",
+      frame: "Wow-момент → апгрейд на эмоции",
+      trigger: "Попытка настроить второй канал или посмотреть аналитику AI",
+      offer: "Старт: ₽1 490/мес — безлимит AI + 3 агента",
+      anchor: "vs Intercom $85/мес × курс = ₽7 800 — сэкономьте 80%",
+      urgency: "Цена фиксируется на 12 мес при оплате сейчас",
+    },
+
+    inv: {
+      hook: "«Мой AI ответил клиенту в 2:30 ночи»",
+      mech: "Поделись скриншотом AI-статистики → +1 месяц бесплатно для тебя и друга",
+      viral: "«Работает на КоммуниQ» в подписи виджета (бесплатный план)",
+    },
+  },
+
+  B: {
+    name: "Проактив",
+    emoji: "📡",
+    color: "#059669",
+    bg: "bg-emerald-50", bdr: "border-emerald-200", txt: "text-emerald-700",
+    accent: "bg-emerald-600 text-white",
+    accentHover: "hover:bg-emerald-700",
+    badge: "bg-emerald-100 text-emerald-800",
+    tagline: "Пиши клиентам первым — до того, как они уйдут",
+    hypothesis: "Проактивность = дифференциатор vs Zendesk/JivoChat",
+    segment: "Product-Led Growth B2B, онбординг",
+    risk: "Триггеры сложно настроить — нужен guided setup",
+
+    landing: {
+      hl: "Перестань тушить пожары — предупреждай их",
+      sub: "Поведенческие триггеры + AI пишут клиентам первыми. Конверсия растёт, отток — падает.",
+      cta: "Настроить первый триггер",
+      proof: ["Первый триггер за 5 минут", "Рост конверсии фри→пейд на 34%", "Снижение churn на 28%"],
+    },
+
+    onboarding: {
+      style: "Trigger Builder — визуальный конструктор",
+      q1: "Выберите событие-триггер: зашёл на pricing / провёл 3+ сессии / не логинился 7 дней",
+      q2: "Настройте сообщение: AI-генерация или свой шаблон",
+      q3: "Включите триггер — первое сообщение уйдёт автоматически",
+      progress: ["Триггер создан ✅", "Аудитория: 47 пользователей подходят", "Отправка: авто при следующем событии"],
+    },
+
+    aha: {
+      title: "📡 Вы написали клиенту — до того, как он позвонил",
+      subtitle: "Триггер «Не оплатил после пробного периода» — сработал",
+      tickets: [
+        { q: "👤 Алексей Иванов — trial истёк 2 дня назад", a: "Отправлено: «Заметили, что вы не завершили настройку...»", conf: "—", status: "💬 Ответил через 12 мин" },
+        { q: "👤 ООО «Ромашка» — 3 сессии без оплаты", a: "Отправлено: «Нужна помощь с выбором тарифа?»", conf: "—", status: "✅ Оформили подписку" },
+        { q: "👤 Команда Петрова — не заходили 8 дней", a: "Отправлено: «Что-то пошло не так? Расскажите нам»", conf: "—", status: "💬 Дали обратную связь" },
+      ],
+      kpi: "34% конверсия из триггерных сообщений",
+      wow: "3 потенциальных churner сохранены — без звонков от команды",
+    },
+
+    dash: {
+      hook: "Proactive Engagement Hub",
+      stats: [
+        { label: "Активных триггеров", val: "12", trend: "Работают 24/7", color: "text-emerald-600" },
+        { label: "Конверсия из триггеров", val: "34%", trend: "↑ Среднее по SaaS: 18%", color: "text-blue-600" },
+        { label: "Churners спасено / мес", val: "23", trend: "≈ ₽345 000 ARR сохранено", color: "text-amber-600" },
+        { label: "NPS после проактива", val: "+47", trend: "↑ +12 vs контрольная группа", color: "text-violet-600" },
+      ],
+      ai_queue: "12 триггеров активны | 89 сообщений вчера | 3 новых конверсии",
+    },
+
+    pay: {
+      when: "После настройки первого триггера (proof of concept)",
+      frame: "Клиент видит конкретный результат → апгрейд логичен",
+      trigger: "Попытка создать второй триггер или посмотреть аналитику кампаний",
+      offer: "Рост: ₽2 990/мес — безлимит триггеров + AI + 5 агентов",
+      anchor: "Один спасённый churner окупает месяц подписки",
+      urgency: "A/B-тестирование триггеров — только в платном плане",
+    },
+
+    inv: {
+      hook: "«Мы уведомили 120 клиентов до инцидента — покажу как»",
+      mech: "Case study шаблон → поделись с коллегой → оба получают +14 дней",
+      viral: "«Отправлено через КоммуниQ» + ссылка в проактивных сообщениях",
+    },
+  },
+
+  C: {
+    name: "Единое Окно",
+    emoji: "🪟",
+    color: "#7c3aed",
+    bg: "bg-violet-50", bdr: "border-violet-200", txt: "text-violet-700",
+    accent: "bg-violet-600 text-white",
+    accentHover: "hover:bg-violet-700",
+    badge: "bg-violet-100 text-violet-800",
+    tagline: "Все клиентские каналы в одном месте — история не теряется",
+    hypothesis: "All-in-one контекст = retention anchor + enterprise-look",
+    segment: "Mid-market CS Teams, 10-100 агентов",
+    risk: "Setup 2-4 недели — нужен fast time-to-value",
+
+    landing: {
+      hl: "Выгляди как enterprise-команда — с первого дня",
+      sub: "Чат + email + Telegram + ВКонтакте в одном inbox. История клиента всегда под рукой. AI помогает отвечать.",
+      cta: "Подключить все каналы",
+      proof: ["ВКонтакте + Telegram из коробки", "Единый inbox для всей команды", "История клиента за 2 клика"],
+    },
+
+    onboarding: {
+      style: "Channel Connector — пошаговое подключение",
+      q1: "Подключите каналы: чат на сайте / email / Telegram / ВКонтакте / WhatsApp",
+      q2: "Пригласите команду (роли: агент, супервизор, аналитик)",
+      q3: "Импортируйте историю: CSV из старой системы или API",
+      progress: ["Чат + Telegram подключены ✅", "Команда: 4 агента ✅", "Импорт истории: 2 340 контактов ✅"],
+    },
+
+    aha: {
+      title: "🪟 Клиент написал в Telegram — ты ответил из единого inbox",
+      subtitle: "История: 3 предыдущих обращения + открытые заказы + NPS",
+      tickets: [
+        { q: "📱 Telegram: «Где мой заказ №8821?»", a: "Агент видит: заказ + статус + история + NPS 3/10", conf: "—", status: "✅ Ответил за 45 сек" },
+        { q: "✉️ Email: «Хочу вернуть товар»", a: "AI предложил шаблон возврата с учётом истории", conf: "88%", status: "✅ Закрыт AI-шаблоном" },
+        { q: "💬 ВКонтакте: «Долго ждать менеджера»", a: "Авто-ответ + эскалация супервизору", conf: "—", status: "👁 Мониторинг" },
+      ],
+      kpi: "1 агент вместо 3 — благодаря единому контексту",
+      wow: "Время ответа: 45 сек (было: 2.5 часа из разных систем)",
+    },
+
+    dash: {
+      hook: "Unified Inbox Command Center",
+      stats: [
+        { label: "Активных каналов", val: "5", trend: "Чат + Email + TG + VK + WhatsApp", color: "text-violet-600" },
+        { label: "Avg. время ответа", val: "1.8 мин", trend: "↓ было 2.5 часа (всё разрозненно)", color: "text-emerald-600" },
+        { label: "Дубликатов избежано", val: "34/нед", trend: "Клиент не пишет дважды", color: "text-blue-600" },
+        { label: "SLA выполнено", val: "96%", trend: "↑ +23% vs старая система", color: "text-amber-600" },
+      ],
+      ai_queue: "5 каналов | 12 активных | 0 без ответа > 5 мин",
+    },
+
+    pay: {
+      when: "После 14 дней (привычка + ROI очевиден)",
+      frame: "Команда уже не может без единого inbox → апгрейд = продление статус-кво",
+      trigger: "Исчерпан лимит историй или попытка подключить 4-й канал",
+      offer: "Бизнес: ₽3 490/мес — 5 каналов + AI + безлимит агентов",
+      anchor: "ROI-калькулятор: экономия 4.2 часа/агент/день × команда 5 = ₽47 000/мес",
+      urgency: "Историю контактов можно экспортировать только из платного плана",
+    },
+
+    inv: {
+      hook: "«Вся команда видит одно — хаоса нет»",
+      mech: "Пригласи коллегу → оба получают +1 агентское место бесплатно на 3 мес",
+      viral: "«Powered by КоммуниQ» в email подписи и чат-виджете (free tier)",
+    },
+  },
+
+  D: {
+    name: "Рост",
+    emoji: "📈",
+    color: "#7e22ce",
+    bg: "bg-purple-50", bdr: "border-purple-200", txt: "text-purple-700",
+    accent: "bg-gradient-to-r from-purple-600 to-indigo-600 text-white",
+    accentHover: "hover:from-purple-700 hover:to-indigo-700",
+    badge: "bg-purple-100 text-purple-800",
+    tagline: "Поддержка — это не затраты. Это двигатель выручки.",
+    hypothesis: "Support-as-Revenue: PQL из чатов + memory-rich AI + AI transparency = retention + expansion",
+    segment: "Mid-market PLG/SaaS с потенциалом расширения (ARR $500K–$5M)",
+    risk: "Requires sales+support alignment — организационные изменения, не только SaaS",
+
+    // TREND 1: Memory-Rich AI — 74% frustrated repeating, 83% CX leaders say critical
+    // TREND 2: AI Transparency — 95% want explanation, only 37% companies provide it
+    // TREND 3: Product-Led Sales — support conversations → PQL detection → expansion
+    // TREND 4: Outcome-based pricing — pay for resolved + revenue generated, not seats
+    // TREND 5: CX Fatigue counter — transparent AI + easy human escalation
+
+    landing: {
+      hl: "Превращай поддержку в выручку — AI помнит всё, объясняет решения, находит возможности",
+      sub: "Memory-rich AI не задаёт дважды один вопрос. Прозрачный AI объясняет каждое решение. PQL-детектор превращает обращения в сделки.",
+      cta: "Запустить Revenue Support",
+      proof: [
+        "AI помнит всю историю клиента — повторений нет",
+        "Прозрачность AI: клиент видит почему так решено",
+        "PQL-сигналы из чатов → отдел продаж получает горячих лидов",
+      ],
+      trends: [
+        { tag: "Zendesk CX 2026", stat: "74% раздражаются повторять историю", url: "https://cxtrends.zendesk.com" },
+        { tag: "Zendesk CX 2026", stat: "95% хотят объяснения решений AI", url: "https://cxtrends.zendesk.com" },
+        { tag: "McKinsey 2025",   stat: "PLS компании растут значительно быстрее", url: "https://www.mckinsey.com/industries/technology-media-and-telecommunications/our-insights/from-product-led-growth-to-product-led-sales-beyond-the-plg-hype" },
+      ],
+    },
+
+    onboarding: {
+      style: "Revenue Intelligence Setup — 3 блока",
+      q1: "Подключите CRM (AmoCRM / Битрикс24 / Salesforce) — PQL-сигналы пойдут напрямую в сделки",
+      q2: "Настройте сигналы расширения: вопрос о цене / упоминание конкурента / запрос фичи / роль enterprise",
+      q3: "Включите Memory AI: история клиента из CRM + прошлые тикеты = агент знает всё с первого сообщения",
+      progress: [
+        "AmoCRM подключён ✅ — 1 240 контактов синхронизировано",
+        "PQL-триггеры настроены ✅ — 4 сигнала активны",
+        "Memory AI обучен ✅ — контекст загружен для всех клиентов",
+      ],
+      transparency_note: "AI Transparency включён: каждый ответ AI содержит пояснение источника данных",
+    },
+
+    aha: {
+      title: "📈 Поддержка нашла 3 горячих лида — пока отдел продаж спал",
+      subtitle: "Memory AI + PQL-детектор работали ночью. Утром — готовые возможности.",
+      tickets: [
+        {
+          q: "👤 Иван К. (ООО «Ромашка», 12 польз.) спросил про API-лимиты",
+          a: "🧠 Memory AI: 3-й вопрос об интеграции за неделю + роль CTO в профиле",
+          conf: "PQL 🔥",
+          status: "→ CRM: «Готов к Enterprise»",
+          ai_why: "Почему: 3 API-вопроса за 7 дней + должность CTO + команда 12 человек = expansion-сигнал",
+        },
+        {
+          q: "👤 Мария С. упомянула: «У конкурента это работает иначе»",
+          a: "🧠 Memory AI: клиент на тарифе Старт 8 мес, CSAT 4.9, 2 раза интересовался Pro",
+          conf: "PQL 🌡️",
+          status: "→ CRM: «Риск churn + upsell»",
+          ai_why: "Почему: упоминание конкурента + высокий CSAT + давний клиент = срочно связаться",
+        },
+        {
+          q: "👤 Команда «БетаТест» (3 агента): «Можно добавить ещё 5 коллег?»",
+          a: "🧠 Memory AI: команда растёт (была 1 агент → 3 за 2 мес), NPS 9",
+          conf: "PQL ⚡",
+          status: "→ CRM: «Авто-апгрейд предложен»",
+          ai_why: "Почему: рост команды + высокий NPS + вопрос о местах = expansion opportunity",
+        },
+      ],
+      kpi: "₽127 000 expansion revenue найдено за прошлый месяц",
+      wow: "Support + Sales alignment без единого ручного процесса",
+    },
+
+    dash: {
+      hook: "Revenue Intelligence Command Center",
+      stats: [
+        { label: "PQL выявлено / мес", val: "23", trend: "₽340K потенциальной выручки", color: "text-purple-600" },
+        { label: "Конверсия PQL → сделка", val: "31%", trend: "↑ vs cold leads: 8%", color: "text-indigo-600" },
+        { label: "Memory AI: повторений", val: "0%", trend: "↓ было 74% до внедрения", color: "text-emerald-600" },
+        { label: "AI Transparency score", val: "4.8/5", trend: "Клиенты доверяют AI-решениям", color: "text-amber-600" },
+      ],
+      ai_queue: "12 активных | 3 PQL🔥 | 2 churn-риска⚠️ | 0 без AI-объяснения",
+      pql_pipeline: [
+        { name: "ООО «Ромашка»", signal: "API-интерес", score: "92", value: "₽45K" },
+        { name: "БетаТест",      signal: "Рост команды", score: "87", value: "₽28K" },
+        { name: "Tech Solutions",signal: "Enterprise-вопрос", score: "71", value: "₽62K" },
+      ],
+    },
+
+    pay: {
+      when: "После первого обнаруженного PQL (сразу виден ROI)",
+      frame: "Поддержка уже окупила себя — апгрейд = масштабирование прибыльного канала",
+      trigger: "Команда продаж увидела первый PQL в CRM → хочет больше",
+      offer: "Рост: ₽4 990/мес — Memory AI + PQL-детектор + CRM-интеграция + AI Transparency",
+      anchor: "1 закрытая сделка из PQL = 3-12 мес подписки окуплено",
+      urgency: "PQL-детектор + CRM-sync — только в плане Рост",
+      pricing_model: "Опция: ₽990/мес + 0.5% от выручки из PQL-сделок (outcome-based)",
+    },
+
+    inv: {
+      hook: "«Support нашёл нам клиента на ₽180K — ни одного звонка от sales»",
+      mech: "Поделись кейсом → шаблон success story + ₽2 000 на счёт за каждого привлечённого",
+      viral: "Revenue Intelligence Report — ежемесячный отчёт с вашим брендом (co-branding с КоммуниQ)",
+    },
+  },
+};
+
+const CJM_META = {
+  landing:   { stage: "Awareness",    aarrr: "Acquisition",       q: "Релевантен ли hook для сегмента?" },
+  onboarding:{ stage: "Activation",   aarrr: "Activation",        q: "Дошёл ли до первого успеха (<10 мин)?" },
+  aha:       { stage: "Aha Moment",   aarrr: "Activation",        q: "Получил ли клиент WOW без помощи?" },
+  dash:      { stage: "Engagement",   aarrr: "Retention",         q: "Возвращается ли ежедневно?" },
+  pay:       { stage: "Monetization", aarrr: "Revenue",           q: "Понятна ли ценность ДО paywall?" },
+  inv:       { stage: "Referral",     aarrr: "Referral",          q: "Рекомендует ли органически?" },
+};
+
+const SCREENS   = ["landing","onboarding","aha","dash","pay","inv"];
+const SCREEN_LBL = { landing:"Вход", onboarding:"Онбординг", aha:"Aha Moment", dash:"Dashboard", pay:"Монетизация", inv:"Реферал" };
+
+/* ── Comparison rows ── */
+const COMPARE_ROWS = [
+  { l: "Aha Moment",       fn: (v) => v.aha.title.replace(/[\u{1F300}-\u{1FFFF}]/gu,"").trim() },
+  { l: "Entry Hook",       fn: (v) => v.landing.hl },
+  { l: "Сегмент",          fn: (v) => v.segment },
+  { l: "Онбординг",        fn: (v) => v.onboarding.style },
+  { l: "Paywall триггер",  fn: (v) => v.pay.when },
+  { l: "Гипотеза",         fn: (v) => v.hypothesis },
+  { l: "Главный риск",     fn: (v) => v.risk },
+  { l: "Реферальный крюк", fn: (v) => v.inv.hook },
+];
+
+
+/* ── Sources / Citations ── */
+const SOURCES = {
+  zendesk_cx2026:  { label: "Zendesk CX Trends 2026", url: "https://cxtrends.zendesk.com" },
+  mckinsey_pls:    { label: "McKinsey: Product-Led Sales", url: "https://www.mckinsey.com/industries/technology-media-and-telecommunications/our-insights/from-product-led-growth-to-product-led-sales-beyond-the-plg-hype" },
+  bvp_pricing:     { label: "BVP: AI Pricing Playbook", url: "https://www.bvp.com/atlas/the-ai-pricing-and-monetization-playbook" },
+  cisco_agentic:   { label: "Apizee/Cisco: Agentic AI 2026", url: "https://www.apizee.com/customer-service-trends.php" },
+  gartner_agents:  { label: "Zylo: SaaS Trends 2026", url: "https://zylo.com/blog/saas-trends/" },
+  modall_saas:     { label: "Modall: 25 SaaS Trends 2025–2026", url: "https://modall.ca/blog/saas-trends" },
+  zendesk_multimodal: { label: "Zendesk: Visual Evidence future of CX", url: "https://www.zendesk.com/blog/zip3-visual-evidence-future-cx-snapcall/" },
+  zendesk_tech:    { label: "Zendesk: What tech companies need 2026", url: "https://www.zendesk.com/blog/zip2-what-tech-companies-need-according-to-zendesks-2026-cx-trends-report/" },
+  journeybee:      { label: "JourneyBee: 10 SaaS Trends 2026", url: "https://www.journeybee.io/resources/saas-10-trends-that-will-make-or-break-your-business" },
+};
+
+function SourceLink({ src, label }) {
+  const s = SOURCES[src];
+  if (!s) return null;
+  return (
+    <a href={s.url} target="_blank" rel="noopener noreferrer"
+       className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-200 hover:border-blue-200 no-underline">
+      <span>🔗</span>
+      <span>{label || s.label}</span>
+    </a>
+  );
+}
+
+function SourceBadge({ src, short }) {
+  const s = SOURCES[src];
+  if (!s) return null;
+  return (
+    <a href={s.url} target="_blank" rel="noopener noreferrer"
+       className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors no-underline whitespace-nowrap">
+      ↗ {short || s.label}
+    </a>
+  );
+}
+
+/* ── Screen Card ── */
+function ScreenCard({ vk, sk, showMeta }) {
+  const v   = VARIANTS[vk];
+  const meta = CJM_META[sk];
+
+  const body = () => {
+    switch (sk) {
+      case "landing": return (
+        <div className="space-y-4">
+          <h3 className="text-xl font-bold text-gray-900 leading-tight">{v.landing.hl}</h3>
+          <p className="text-sm text-gray-600 leading-relaxed">{v.landing.sub}</p>
+          <div className="space-y-1.5">
+            {v.landing.proof.map((p,i) => (
+              <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                <span className="text-emerald-500 font-bold">✓</span>{p}
+              </div>
+            ))}
+          </div>
+          {vk === "D" && v.landing.trends && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">📡 Тренды 2026</p>
+              {v.landing.trends.map((t,i) => (
+                <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-purple-50 border border-purple-100">
+                  {t.url
+                    ? <a href={t.url} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-200 text-purple-800 hover:bg-purple-300 transition-colors whitespace-nowrap no-underline">↗ {t.tag}</a>
+                    : <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-200 text-purple-800 whitespace-nowrap">{t.tag}</span>
+                  }
+                  <span className="text-[11px] text-gray-600">{t.stat}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button className={`w-full py-3 rounded-xl font-semibold text-sm ${v.accent} shadow-md`}>
+            {v.landing.cta} →
+          </button>
+          <p className="text-[10px] text-center text-gray-400">14 дней бесплатно · Без карты · Отмена в любой момент</p>
+        </div>
+      );
+
+      case "onboarding": return (
+        <div className="space-y-3">
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">{v.onboarding.style}</p>
+          {[v.onboarding.q1, v.onboarding.q2, v.onboarding.q3].map((q, i) => (
+            <div key={i} className={`p-3 rounded-xl border ${v.bdr} ${v.bg}`}>
+              <div className="flex items-start gap-2">
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 ${v.accent}`}>{i+1}</span>
+                <p className="text-sm text-gray-700">{q}</p>
+              </div>
+            </div>
+          ))}
+          <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+            <p className="text-[10px] text-gray-500 font-semibold mb-1.5">Прогресс</p>
+            {v.onboarding.progress.map((p,i) => (
+              <p key={i} className="text-xs text-gray-600">{p}</p>
+            ))}
+          </div>
+          {vk === "D" && v.onboarding.transparency_note && (
+            <div className="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200">
+              <p className="text-[11px] text-indigo-700">🔍 {v.onboarding.transparency_note}</p>
+            </div>
+          )}
+        </div>
+      );
+
+      case "aha": return (
+        <div className="space-y-3">
+          <div className={`p-3 rounded-xl text-center ${v.accent} shadow-sm`}>
+            <p className="font-bold text-sm">{v.aha.title}</p>
+            <p className="text-[11px] opacity-80 mt-0.5">{v.aha.subtitle}</p>
+          </div>
+          <div className="space-y-2">
+            {v.aha.tickets.map((t,i) => (
+              <div key={i} className={`p-2.5 rounded-xl border ${v.bdr} ${v.bg} text-xs space-y-1`}>
+                <p className="font-semibold text-gray-800">{t.q}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-gray-500 text-[11px]">{t.a}</p>
+                  <span className="font-bold text-gray-700">{t.status}</span>
+                </div>
+                {t.conf !== "—" && <p className="text-[10px] text-gray-400">Confidence AI: {t.conf}</p>}
+                {t.ai_why && (
+                  <div className="mt-1 p-1.5 rounded-lg bg-white border border-purple-100">
+                    <p className="text-[9px] text-purple-600"><span className="font-bold">🔍 AI объясняет:</span> {t.ai_why}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="p-2.5 rounded-xl bg-green-50 border border-green-200 text-center">
+            <p className="text-sm font-bold text-green-800">{v.aha.kpi}</p>
+            <p className="text-xs text-green-600 mt-0.5">{v.aha.wow}</p>
+          </div>
+        </div>
+      );
+
+      case "dash": return (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className={`font-bold text-sm ${v.txt}`}>{v.dash.hook}</h4>
+            <span className="text-[10px] text-gray-400">Обновление: только что</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {v.dash.stats.map((s,i) => (
+              <div key={i} className="p-2.5 rounded-xl bg-white border border-gray-100 shadow-sm">
+                <p className={`text-lg font-bold ${s.color}`}>{s.val}</p>
+                <p className="text-[10px] text-gray-500 leading-tight">{s.label}</p>
+                <p className="text-[9px] text-gray-400 mt-0.5">{s.trend}</p>
+              </div>
+            ))}
+          </div>
+          <div className={`p-2 rounded-xl ${v.bg} border ${v.bdr} text-[11px] ${v.txt} font-mono`}>
+            {v.dash.ai_queue}
+          </div>
+          {vk === "D" && v.dash.pql_pipeline && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">🔥 PQL Pipeline (топ-3)</p>
+              {v.dash.pql_pipeline.map((p,i) => (
+                <div key={i} className="flex items-center justify-between p-2 rounded-xl bg-white border border-purple-100 shadow-sm text-xs">
+                  <span className="font-semibold text-gray-800 w-28 truncate">{p.name}</span>
+                  <span className="text-gray-400 text-[10px]">{p.signal}</span>
+                  <span className="font-bold text-purple-700">Score: {p.score}</span>
+                  <span className="font-bold text-green-700">{p.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+
+      case "pay": return (
+        <div className="space-y-3">
+          <div className={`p-3 rounded-xl ${v.bg} border ${v.bdr}`}>
+            <p className={`text-xs font-bold ${v.txt} mb-1`}>⏱ Когда paywall?</p>
+            <p className="text-sm text-gray-700">{v.pay.when}</p>
+          </div>
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
+            <p className="text-xs font-bold text-amber-800 mb-1">💡 Фрейминг</p>
+            <p className="text-sm text-gray-700">{v.pay.frame}</p>
+          </div>
+          <div className="p-3 rounded-xl bg-green-50 border border-green-200">
+            <p className="text-xl font-bold text-green-800">{v.pay.offer}</p>
+            <p className="text-xs text-green-600 mt-1">{v.pay.anchor}</p>
+          </div>
+          {vk === "D" && v.pay.pricing_model && (
+            <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200">
+              <p className="text-[10px] font-bold text-purple-700 mb-0.5">📊 Outcome-Based опция (тренд 2026)</p>
+              <p className="text-xs text-purple-600">{v.pay.pricing_model}</p>
+            </div>
+          )}
+          <div className="p-2.5 rounded-xl bg-red-50 border border-red-200">
+            <p className="text-xs text-red-700">⚡ {v.pay.urgency}</p>
+          </div>
+        </div>
+      );
+
+      case "inv": return (
+        <div className="space-y-3">
+          <div className={`p-3 rounded-xl ${v.accent} text-center`}>
+            <p className="font-bold text-sm">{v.inv.hook}</p>
+          </div>
+          <div className={`p-3 rounded-xl border ${v.bdr} ${v.bg}`}>
+            <p className="text-xs font-bold text-gray-700 mb-1">🎁 Реферальная механика</p>
+            <p className="text-sm text-gray-600">{v.inv.mech}</p>
+          </div>
+          <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+            <p className="text-xs font-bold text-gray-600 mb-1">📣 Вирусный механизм</p>
+            <p className="text-sm text-gray-500">{v.inv.viral}</p>
+          </div>
+        </div>
+      );
+      default: return null;
+    }
+  };
+
+  return (
+    <div>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 min-h-[340px]">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{SCREEN_LBL[sk]}</span>
+          <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${v.badge}`}>{v.emoji} {v.name}</span>
+        </div>
+        {body()}
+      </div>
+      {showMeta && (
+        <div className="mt-2 p-3 rounded-xl bg-gray-900 text-gray-300 text-[11px] space-y-1">
+          <div className="flex justify-between"><span className="text-gray-500">Stage:</span><span>{meta.stage}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">AARRR:</span><span>{meta.aarrr}</span></div>
+          <p className="text-gray-500 italic mt-1">❓ Custdev: {meta.q}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Compare Table ── */
+function CompareTable() {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs border-collapse">
+        <thead>
+          <tr className="bg-gray-50">
+            <th className="text-left p-3 text-gray-500 font-semibold w-[20%]">Параметр</th>
+            {Object.entries(VARIANTS).map(([k,v]) => (
+              <th key={k} className={`text-left p-3 font-semibold ${v.txt}`}>{v.emoji} {v.name}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {COMPARE_ROWS.map((r,i) => (
+            <tr key={i} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+              <td className="p-3 font-semibold text-gray-600">{r.l}</td>
+              {Object.values(VARIANTS).map((v,j) => (
+                <td key={j} className="p-3 text-gray-700 leading-snug">{r.fn(v)}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ── Scoring Cards ── */
+function ScoringCards({ scores, setScores }) {
+  const criteria = [
+    { id:"fit",   l:"Fit с сегментом" },
+    { id:"wow",   l:"Wow-момент" },
+    { id:"easy",  l:"Простота онбординга" },
+    { id:"pay",   l:"Логика монетизации" },
+    { id:"viral", l:"Вирусность" },
+  ];
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-bold text-gray-800">🏆 Оценка вариантов</h3>
+        <p className="text-xs text-gray-400">Нажмите ★ для оценки 1-5</p>
+      </div>
+      {Object.entries(VARIANTS).map(([vk, v]) => {
+        const total = criteria.reduce((s,c) => s + (scores[`${vk}-${c.id}`] || 0), 0);
+        return (
+          <div key={vk} className={`p-4 rounded-2xl border-2 ${v.bdr} ${v.bg}`}>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className={`font-bold ${v.txt}`}>{v.emoji} Вариант {vk}: {v.name}</h4>
+              <span className={`text-sm font-bold ${v.txt}`}>{total}/{criteria.length * 5}</span>
+            </div>
+            {criteria.map(c => {
+              const key = `${vk}-${c.id}`;
+              const val = scores[key] || 0;
+              return (
+                <div key={c.id} className="flex items-center gap-2 mb-2">
+                  <span className="text-[11px] text-gray-600 w-36 flex-shrink-0">{c.l}</span>
+                  <div className="flex gap-0.5">
+                    {[1,2,3,4,5].map(n => (
+                      <button key={n} onClick={() => setScores(p => ({...p,[key]:n}))}
+                        className={`w-6 h-6 rounded text-[11px] font-bold transition-all ${n <= val ? `${v.accent}` : "bg-white border border-gray-200 text-gray-300 hover:border-gray-400"}`}>
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            <p className="text-[10px] text-gray-500 mt-2 italic">{v.tagline}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Locked Result ── */
+function LockedResult({ vk, onBack }) {
+  const v = VARIANTS[vk];
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="bg-white rounded-3xl shadow-xl p-8 max-w-lg w-full text-center space-y-6">
+        <div className="text-7xl">{v.emoji}</div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Выбран вариант {vk}: «{v.name}»</h2>
+          <p className={`text-sm font-medium mt-1 ${v.txt}`}>{v.tagline}</p>
+        </div>
+        <div className={`p-4 rounded-2xl border-2 ${v.bdr} ${v.bg} text-left space-y-2`}>
+          <p className="text-xs font-bold text-gray-600">✅ Зафиксировано для M3-M6:</p>
+          <p className="text-sm text-gray-700"><strong>Aha:</strong> {v.aha.title.replace(/[\u{1F300}-\u{1FFFF}]/gu,"").trim()}</p>
+          <p className="text-sm text-gray-700"><strong>Сегмент:</strong> {v.segment}</p>
+          <p className="text-sm text-gray-700"><strong>Paywall:</strong> {v.pay.when}</p>
+          <p className="text-sm text-gray-700"><strong>Виральность:</strong> {v.inv.hook}</p>
+          {vk === "D" && (
+            <div className="pt-2 border-t border-purple-200 space-y-1">
+              <p className="text-[10px] font-bold text-purple-700">📡 Тренды 2026 заложены:</p>
+              <p className="text-[11px] text-purple-600">• Memory-rich AI: <a href="https://cxtrends.zendesk.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-purple-800">Zendesk CX 2026 ↗</a> — 74% устали повторяться</p>
+              <p className="text-[11px] text-purple-600">• AI Transparency: <a href="https://cxtrends.zendesk.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-purple-800">Zendesk CX 2026 ↗</a> — 95% хотят объяснений</p>
+              <p className="text-[11px] text-purple-600">• Product-Led Sales: <a href="https://www.mckinsey.com/industries/technology-media-and-telecommunications/our-insights/from-product-led-growth-to-product-led-sales-beyond-the-plg-hype" target="_blank" rel="noopener noreferrer" className="underline hover:text-purple-800">McKinsey 2025 ↗</a> — PQL из поддержки</p>
+              <p className="text-[11px] text-purple-600">• Outcome-based pricing: <a href="https://www.bvp.com/atlas/the-ai-pricing-and-monetization-playbook" target="_blank" rel="noopener noreferrer" className="underline hover:text-purple-800">BVP Atlas 2026 ↗</a></p>
+              <p className="text-[11px] text-purple-600">• Efficient Growth: <a href="https://modall.ca/blog/saas-trends" target="_blank" rel="noopener noreferrer" className="underline hover:text-purple-800">Modall 2025 ↗</a> — Retention > Acquisition</p>
+            </div>
+          )}
+        </div>
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-left">
+          <p className="text-xs font-bold text-amber-800 mb-2">🎯 Гипотеза для M3-M6:</p>
+          <p className="text-sm text-amber-700">{v.hypothesis}</p>
+          <p className="text-sm text-red-600 mt-1">⚠️ Риск: {v.risk}</p>
+        </div>
+        <p className="text-xs text-gray-400">Этот выбор будет использован как основа для конкурентного анализа (M3), юнит-экономики (M4), движка роста (M5) и 90-дневного playbook (M6).</p>
+        <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 underline">
+          ← Изменить выбор
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   MAIN APP
+══════════════════════════════════════════════════════ */
+export default function IntercomCJM() {
+  const [av, setAv] = useState("A");
+  const [si, setSi] = useState(0);
+  const [showMeta, setShowMeta] = useState(false);
+  const [view, setView] = useState("screens");   // screens | compare | score
+  const [scores, setScores] = useState({});
+  const [locked, setLocked] = useState(null);
+
+  if (locked) return <LockedResult vk={locked} onBack={() => setLocked(null)} />;
+
+  const v = VARIANTS[av];
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans">
+
+      {/* ── HEADER ── */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+
+          {/* Top row */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">💬</span>
+                <h1 className="text-base font-bold text-gray-900">{COMPANY} — CJM Prototype</h1>
+                <span className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-semibold">M2.5 • DEEP</span>
+              </div>
+              <p className="text-[11px] text-gray-400 mt-0.5">{TAGLINE} · 4 варианта × 6 экранов</p>
+            </div>
+            <button onClick={() => setShowMeta(!showMeta)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${showMeta ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
+              📊 Custdev
+            </button>
+          </div>
+
+          {/* Variant tabs */}
+          <div className="flex gap-1.5 mt-3 flex-wrap">
+            {Object.entries(VARIANTS).map(([k, var_]) => (
+              <button key={k} onClick={() => { setAv(k); setView("screens"); }}
+                className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  av === k ? `${var_.accent} shadow-md` : `bg-white border border-gray-200 text-gray-500 hover:border-gray-400`
+                }`}>
+                {var_.emoji} {k}: {var_.name}
+                {av === k && <span className="ml-1 opacity-70">← активен</span>}
+              </button>
+            ))}
+          </div>
+
+          {/* View tabs */}
+          <div className="flex gap-1 mt-2 border-t border-gray-100 pt-2">
+            {[
+              { id:"screens", i:"📱", l:"Экраны" },
+              { id:"compare", i:"⚖️", l:"Сравнение" },
+              { id:"score",   i:"🏆", l:"Оценка" },
+              { id:"sources", i:"🔗", l:"Источники" },
+            ].map(t => (
+              <button key={t.id} onClick={() => setView(t.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  view === t.id ? "bg-gray-900 text-white" : "text-gray-500 hover:bg-gray-100"
+                }`}>
+                {t.i} {t.l}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── CONTENT ── */}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+
+        {/* SCREENS VIEW */}
+        {view === "screens" && <>
+
+          {/* Variant summary strip */}
+          <div className={`p-3 rounded-2xl mb-5 border ${v.bdr} ${v.bg}`}>
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <p className={`text-xs font-bold uppercase tracking-wider ${v.txt}`}>Вариант {av} · {v.name} {v.emoji}</p>
+                <p className="text-sm font-semibold text-gray-800 mt-0.5">{v.landing.hl}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">Сегмент: {v.segment}</p>
+              </div>
+              <div className="text-right text-[10px] text-gray-500">
+                <p>Гипотеза:</p>
+                <p className="font-semibold text-gray-700 max-w-[200px] text-right">{v.hypothesis}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Screen nav */}
+          <div className="flex gap-1.5 mb-6 overflow-x-auto pb-1">
+            {SCREENS.map((s,i) => (
+              <button key={s} onClick={() => setSi(i)}
+                className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                  si === i ? `${v.accent} shadow-sm` : "bg-white border border-gray-200 text-gray-500 hover:border-gray-300"
+                }`}>
+                {i+1}. {SCREEN_LBL[s]}
+              </button>
+            ))}
+          </div>
+
+          {/* Screen card */}
+          <div className="max-w-md mx-auto">
+            <ScreenCard vk={av} sk={SCREENS[si]} showMeta={showMeta} />
+          </div>
+
+          {/* Prev / Next */}
+          <div className="flex justify-center gap-4 mt-6">
+            <button onClick={() => setSi(Math.max(0, si-1))} disabled={si === 0}
+              className="px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-medium disabled:opacity-30 hover:border-gray-400 transition-all">
+              ← Назад
+            </button>
+            <button onClick={() => setSi(Math.min(5, si+1))} disabled={si === 5}
+              className={`px-5 py-2.5 rounded-xl text-sm font-medium ${v.accent} disabled:opacity-30 shadow-sm transition-all`}>
+              Далее →
+            </button>
+          </div>
+        </>}
+
+        {/* COMPARE VIEW */}
+        {view === "compare" && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-5">⚖️ Сравнение 3 вариантов CJM</h3>
+            <CompareTable />
+          </div>
+        )}
+
+        {/* SCORE VIEW */}
+        {view === "score" && (
+          <ScoringCards scores={scores} setScores={setScores} />
+        )}
+
+        {/* SOURCES VIEW */}
+        {view === "sources" && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-800 mb-1">🔗 Первоисточники исследования</h3>
+              <p className="text-xs text-gray-400">GOAP Research (A*-поиск + OODA). Каждый тезис верифицирован ≥2 источниками. Кликай → оригинал.</p>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">Zendesk</span>
+                CX Trends 2026
+              </h4>
+              {[
+                { title: "Zendesk CX Trends 2026 — главная страница", url: "https://cxtrends.zendesk.com", stat: "11 000 респондентов, 22 страны · Nov 2025", key: "Memory-rich AI · Multimodal 76% · AI Transparency 95% · 74% устали повторять" },
+                { title: "Contextual Intelligence: New CX Standard 2026", url: "https://www.prnewswire.com/news-releases/contextual-intelligence-becomes-the-new-standard-for-exceptional-customer-experience-in-2026-302617972.html", stat: "PR Newswire · Nov 18 2025", key: "74% frustrated repeating · 95% want AI explanation · 76% multimodal · 80% CX leaders: AI transparency non-negotiable" },
+                { title: "Visual Evidence: Future of CX", url: "https://www.zendesk.com/blog/zip3-visual-evidence-future-cx-snapcall/", stat: "Zendesk Blog · Jan 2026", key: "Multimodal support · video AI · guided visual capture · SnapCall" },
+                { title: "What Tech Companies Need in 2026", url: "https://www.zendesk.com/blog/zip2-what-tech-companies-need-according-to-zendesks-2026-cx-trends-report/", stat: "Zendesk Blog · Dec 2025", key: "91% tech CX leaders: AI improves first-reply + resolution · memory-rich персонализация" },
+              ].map((s,i) => (
+                <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
+                   className="block p-3 rounded-xl border border-blue-100 bg-blue-50 hover:bg-blue-100 transition-colors no-underline">
+                  <p className="text-[11px] font-bold text-blue-800">{s.title} ↗</p>
+                  <p className="text-[10px] text-blue-500 mt-0.5">{s.stat}</p>
+                  <p className="text-[10px] text-gray-500 mt-1">📌 {s.key}</p>
+                </a>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">Strategy</span>
+                McKinsey · BVP · Modall
+              </h4>
+              {[
+                { title: "McKinsey: From PLG to Product-Led Sales", url: "https://www.mckinsey.com/industries/technology-media-and-telecommunications/our-insights/from-product-led-growth-to-product-led-sales-beyond-the-plg-hype", stat: "McKinsey & Company · 2023–2025", key: "PLS компании растут значительно быстрее · PQL scoring · expansion revenue · land-and-expand" },
+                { title: "BVP Atlas: AI Pricing & Monetization Playbook", url: "https://www.bvp.com/atlas/the-ai-pricing-and-monetization-playbook", stat: "Bessemer Venture Partners · Feb 2026", key: "Outcome-based pricing · Intercom $0.99/resolution · Renewal Cliff 2026 · soft ROI danger" },
+                { title: "Modall: 25 Definitive SaaS Trends 2025–2026", url: "https://modall.ca/blog/saas-trends", stat: "Modall · Dec 2025", key: "Retention > Acquisition · Efficient Growth · Vertical SaaS 2–3× faster · $315B market" },
+                { title: "JourneyBee: 10 SaaS Trends 2026", url: "https://www.journeybee.io/resources/saas-10-trends-that-will-make-or-break-your-business", stat: "JourneyBee · Jan 2026", key: "Agentic AI as digital workforce · PLS hybrid · Ecosystem-Led Growth · micro unicorns" },
+              ].map((s,i) => (
+                <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
+                   className="block p-3 rounded-xl border border-emerald-100 bg-emerald-50 hover:bg-emerald-100 transition-colors no-underline">
+                  <p className="text-[11px] font-bold text-emerald-800">{s.title} ↗</p>
+                  <p className="text-[10px] text-emerald-500 mt-0.5">{s.stat}</p>
+                  <p className="text-[10px] text-gray-500 mt-1">📌 {s.key}</p>
+                </a>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold">AI Trends</span>
+                Agentic AI · CX Fatigue · SaaS Growth
+              </h4>
+              {[
+                { title: "Apizee: Customer Service Trends 2026", url: "https://www.apizee.com/customer-service-trends.php", stat: "Apizee + Cisco data · Mar 2026", key: "Agentic AI $7B→$93B by 2032 · Cisco: 68% interactions by 2028 · CX fatigue · 47% frustrated by no human" },
+                { title: "Zylo: Top SaaS Trends 2026", url: "https://zylo.com/blog/saas-trends/", stat: "Zylo · Jan 2026", key: "2026 = год Agentic AI · Salesforce Agentforce · 92% SaaS companies have AI on roadmap" },
+                { title: "Salesforce: What Is Product-Led Sales", url: "https://www.salesforce.com/blog/product-led-sales/", stat: "Salesforce · Apr 2025", key: "PQL = Intent + Fit · activation metrics · upsell signals · expansion revenue tracking" },
+                { title: "Qubit Capital: Vertical SaaS 2026", url: "https://qubit.capital/blog/rise-vertical-saas-sector-specific-opportunities", stat: "Qubit Capital · Jan 2026", key: "Vertical SaaS 2–3× faster than horizontal · deep moats · industry-specific compliance" },
+              ].map((s,i) => (
+                <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
+                   className="block p-3 rounded-xl border border-rose-100 bg-rose-50 hover:bg-rose-100 transition-colors no-underline">
+                  <p className="text-[11px] font-bold text-rose-800">{s.title} ↗</p>
+                  <p className="text-[10px] text-rose-500 mt-0.5">{s.stat}</p>
+                  <p className="text-[10px] text-gray-500 mt-1">📌 {s.key}</p>
+                </a>
+              ))}
+            </div>
+
+            <div className="p-3 rounded-xl bg-gray-50 border border-gray-200">
+              <p className="text-[10px] font-bold text-gray-600 mb-1">📐 Методология</p>
+              <p className="text-[10px] text-gray-500">GOAP Research (Goal-Oriented Action Planning) + A*-оптимизация пути поиска + OODA-выполнение. Каждый тезис верифицирован через ≥2 независимых источника (reliability ≥3/5). Период сбора данных: Nov 2025 — Mar 2026.</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── LOCK SECTION ── */}
+        <div className="mt-10 p-6 bg-white rounded-2xl shadow-sm border border-gray-100 text-center">
+          <p className="text-sm font-semibold text-gray-700 mb-1">Зафиксировать вариант → M3-M6</p>
+          <p className="text-xs text-gray-400 mb-4">Winning CJM станет основой для конкурентного анализа, юнит-экономики и 90-дневного playbook</p>
+          <div className="flex gap-2 justify-center flex-wrap">
+            {Object.entries(VARIANTS).map(([k, var_]) => (
+              <button key={k} onClick={() => setLocked(k)}
+                className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:shadow-lg border-2 ${
+                  av === k
+                    ? `${var_.accent} border-transparent shadow-md scale-105`
+                    : `bg-white ${var_.txt} border-current hover:scale-105`
+                }`}>
+                ✅ Выбираю {k}: {var_.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

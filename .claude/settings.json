@@ -1,0 +1,45 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/feature-context.py",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '💡 Session ending. Any insights to capture? Use /myinsights add'"
+          }
+        ]
+      },
+      {
+        "matcher": "feature-roadmap.json",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /workspaces/2026-jan-pu-Intercom-clone-02 && git add .claude/feature-roadmap.json && git diff --cached --quiet .claude/feature-roadmap.json || git commit -m 'chore: update feature roadmap'"
+          }
+        ]
+      },
+      {
+        "matcher": "docs/plans/",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /workspaces/2026-jan-pu-Intercom-clone-02 && git add docs/plans/ && git diff --cached --quiet docs/plans/ || git commit -m 'docs: auto-save plans'"
+          }
+        ]
+      }
+    ]
+  }
+}
