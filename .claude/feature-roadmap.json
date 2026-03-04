@@ -98,7 +98,7 @@
       "description": "Dashboard: dialog count, PQL%, response time, PQL->deal conversion.",
       "priority": "must",
       "milestone": "M2",
-      "status": "next",
+      "status": "done",
       "bc": ["revenue"],
       "depends_on": ["FR-06"]
     },
