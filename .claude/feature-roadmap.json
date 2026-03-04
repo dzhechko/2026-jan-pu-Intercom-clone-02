@@ -68,7 +68,7 @@
       "description": "Incoming via Telegram Business/Bot API. Unified queue with web chat.",
       "priority": "must",
       "milestone": "M1",
-      "status": "next",
+      "status": "done",
       "bc": ["conversation", "integration"],
       "depends_on": ["FR-07"]
     },
