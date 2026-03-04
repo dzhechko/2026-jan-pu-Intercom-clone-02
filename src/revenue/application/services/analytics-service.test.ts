@@ -154,12 +154,12 @@ describe('AnalyticsService', () => {
       const service = new AnalyticsService(mockPool)
       await service.getDashboardMetrics(tenantId, '90d')
 
-      // Verify tenantId was passed to queries
+      // Verify tenantId and days were passed to queries
       expect(mockPool.query).toHaveBeenCalledTimes(8)
       const firstCall = (mockPool.query as jest.Mock).mock.calls[0]
-      expect(firstCall[1]).toEqual([tenantId])
-      // Verify 90 days interval is in the SQL
-      expect(firstCall[0]).toContain('90 days')
+      expect(firstCall[1]).toEqual([tenantId, 90])
+      // Verify parameterized interval is in the SQL
+      expect(firstCall[0]).toContain('make_interval')
     })
 
     it('should default channel counts to zero for missing channels', async () => {
@@ -241,9 +241,10 @@ describe('AnalyticsService', () => {
         { date: '2026-03-01', count: 5 },
         { date: '2026-03-02', count: 10 },
       ])
-      // Check days parameter is in the SQL
-      const query = (mockPool.query as jest.Mock).mock.calls[0][0]
-      expect(query).toContain('7 days')
+      // Check days parameter is passed as query param
+      const firstCall = (mockPool.query as jest.Mock).mock.calls[0]
+      expect(firstCall[1]).toEqual([tenantId, 7])
+      expect(firstCall[0]).toContain('make_interval')
     })
   })
 })

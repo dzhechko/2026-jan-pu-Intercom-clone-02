@@ -90,6 +90,10 @@ export function createRevenueRouter(pool: Pool): Router {
       if (!report) {
         return res.status(404).json({ error: 'Report not found' })
       }
+      const tenantReq = req as TenantRequest
+      if (report.tenantId !== tenantReq.tenantId) {
+        return res.status(404).json({ error: 'Report not found' })
+      }
       return res.json({ report })
     } catch (err) {
       console.error('[revenue-routes] getReport error', err)
@@ -137,6 +141,10 @@ export function createRevenueRouter(pool: Pool): Router {
     try {
       const report = await reportRepo.findById(req.params.id)
       if (!report) {
+        return res.status(404).json({ error: 'Report not found' })
+      }
+      const tenantReq = req as TenantRequest
+      if (report.tenantId !== tenantReq.tenantId) {
         return res.status(404).json({ error: 'Report not found' })
       }
       if (!report.htmlContent) {

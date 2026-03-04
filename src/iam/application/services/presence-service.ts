@@ -12,7 +12,11 @@ export class PresenceService {
    * Mark an operator as online within their tenant.
    */
   async setOnline(operatorId: string, tenantId: string): Promise<void> {
-    await this.redis.sadd(`presence:${tenantId}`, operatorId)
+    try {
+      await this.redis.sadd(`presence:${tenantId}`, operatorId)
+    } catch (err) {
+      console.error('[presence] setOnline error', err)
+    }
   }
 
   /**
@@ -20,8 +24,12 @@ export class PresenceService {
    * Since we know tenantId at disconnect time, we remove directly.
    */
   async setOffline(operatorId: string, tenantId?: string): Promise<void> {
-    if (tenantId) {
-      await this.redis.srem(`presence:${tenantId}`, operatorId)
+    try {
+      if (tenantId) {
+        await this.redis.srem(`presence:${tenantId}`, operatorId)
+      }
+    } catch (err) {
+      console.error('[presence] setOffline error', err)
     }
   }
 
@@ -29,14 +37,24 @@ export class PresenceService {
    * Get all online operator IDs for a tenant.
    */
   async getOnlineOperators(tenantId: string): Promise<string[]> {
-    return this.redis.smembers(`presence:${tenantId}`)
+    try {
+      return await this.redis.smembers(`presence:${tenantId}`)
+    } catch (err) {
+      console.error('[presence] getOnlineOperators error', err)
+      return []
+    }
   }
 
   /**
    * Check if a specific operator is online.
    */
   async isOnline(operatorId: string, tenantId: string): Promise<boolean> {
-    const result = await this.redis.sismember(`presence:${tenantId}`, operatorId)
-    return result === 1
+    try {
+      const result = await this.redis.sismember(`presence:${tenantId}`, operatorId)
+      return result === 1
+    } catch (err) {
+      console.error('[presence] isOnline error', err)
+      return false
+    }
   }
 }

@@ -85,7 +85,7 @@ export function translateToDealClosedEvents(payload: AmoCRMWebhookPayload): Deal
     .map((lead) => {
       // Extract contact email from custom fields if available
       const emailField = lead.custom_fields?.find(
-        (f) => f.name.toLowerCase() === 'email' || f.name.toLowerCase() === 'email',
+        (f) => f.name.toLowerCase() === 'email' || f.name.toLowerCase() === 'e-mail',
       )
       const contactEmail = emailField?.values?.[0]?.value ?? null
 

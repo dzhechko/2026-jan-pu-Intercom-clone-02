@@ -56,7 +56,6 @@ export class AnalyticsService {
     period: PeriodFilter = '30d',
   ): Promise<DashboardMetrics> {
     const days = periodToDays(period)
-    const since = `NOW() - INTERVAL '${days} days'`
 
     // Execute all queries in parallel for performance
     const [
@@ -74,8 +73,8 @@ export class AnalyticsService {
         `SELECT COUNT(*)::int AS total
          FROM conversations.dialogs
          WHERE tenant_id = $1
-           AND created_at >= ${since}`,
-        [tenantId],
+           AND created_at >= NOW() - make_interval(days => $2)`,
+        [tenantId, days],
       ),
 
       // PQL detections in period
@@ -83,8 +82,8 @@ export class AnalyticsService {
         `SELECT COUNT(DISTINCT dialog_id)::int AS total
          FROM pql.detections
          WHERE tenant_id = $1
-           AND created_at >= ${since}`,
-        [tenantId],
+           AND created_at >= NOW() - make_interval(days => $2)`,
+        [tenantId, days],
       ),
 
       // Average response time: time from dialog creation to first OPERATOR message
@@ -99,18 +98,17 @@ export class AnalyticsService {
            LIMIT 1
          ) m ON true
          WHERE d.tenant_id = $1
-           AND d.created_at >= ${since}`,
-        [tenantId],
+           AND d.created_at >= NOW() - make_interval(days => $2)`,
+        [tenantId, days],
       ),
 
       // PQL conversion: deals closed (attributions) / PQL detected
       this.pool.query(
         `SELECT COUNT(DISTINCT a.pql_detection_id)::int AS converted
          FROM revenue.attributions a
-         INNER JOIN revenue.reports r ON a.report_id = r.id
          WHERE a.tenant_id = $1
-           AND a.closed_at >= ${since}`,
-        [tenantId],
+           AND a.closed_at >= NOW() - make_interval(days => $2)`,
+        [tenantId, days],
       ),
 
       // Dialogs by channel
@@ -118,9 +116,9 @@ export class AnalyticsService {
         `SELECT channel_type, COUNT(*)::int AS count
          FROM conversations.dialogs
          WHERE tenant_id = $1
-           AND created_at >= ${since}
+           AND created_at >= NOW() - make_interval(days => $2)
          GROUP BY channel_type`,
-        [tenantId],
+        [tenantId, days],
       ),
 
       // PQL by tier
@@ -129,16 +127,16 @@ export class AnalyticsService {
          FROM conversations.dialogs
          WHERE tenant_id = $1
            AND pql_tier IS NOT NULL
-           AND created_at >= ${since}
+           AND created_at >= NOW() - make_interval(days => $2)
          GROUP BY pql_tier`,
-        [tenantId],
+        [tenantId, days],
       ),
 
       // Daily dialog counts
       this.pool.query(
         `SELECT d::date::text AS date, COUNT(dialogs.id)::int AS count
          FROM generate_series(
-           (NOW() - INTERVAL '${days} days')::date,
+           (NOW() - make_interval(days => $2))::date,
            NOW()::date,
            '1 day'::interval
          ) d
@@ -147,7 +145,7 @@ export class AnalyticsService {
            AND dialogs.created_at::date = d::date
          GROUP BY d::date
          ORDER BY d::date`,
-        [tenantId],
+        [tenantId, days],
       ),
 
       // Top operators by closed dialogs
@@ -163,11 +161,11 @@ export class AnalyticsService {
          WHERE d.tenant_id = $1
            AND d.status = 'CLOSED'
            AND d.operator_id IS NOT NULL
-           AND d.created_at >= ${since}
+           AND d.created_at >= NOW() - make_interval(days => $2)
          GROUP BY d.operator_id, o.name
          ORDER BY dialogs_closed DESC
          LIMIT 10`,
-        [tenantId],
+        [tenantId, days],
       ),
     ])
 
@@ -274,7 +272,7 @@ export class AnalyticsService {
     const { rows } = await this.pool.query(
       `SELECT d::date::text AS date, COUNT(dialogs.id)::int AS count
        FROM generate_series(
-         (NOW() - INTERVAL '${days} days')::date,
+         (NOW() - make_interval(days => $2))::date,
          NOW()::date,
          '1 day'::interval
        ) d
@@ -283,7 +281,7 @@ export class AnalyticsService {
          AND dialogs.created_at::date = d::date
        GROUP BY d::date
        ORDER BY d::date`,
-      [tenantId],
+      [tenantId, days],
     )
     return rows.map((row) => ({
       date: row.date as string,

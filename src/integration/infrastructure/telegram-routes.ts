@@ -7,11 +7,14 @@
  *   GET  /api/telegram/status        — check bot connection (requires auth)
  */
 import { Router, Request, Response, RequestHandler } from 'express'
-import { Pool } from 'pg'
+import { Pool, PoolClient } from 'pg'
 import { Server as SocketIOServer } from 'socket.io'
 import { TelegramBotService } from '@integration/services/telegram-bot-service'
 import { TelegramAdapter, TelegramUpdate } from '@integration/adapters/telegram-adapter'
 import { TenantRequest } from '@shared/middleware/tenant.middleware'
+
+/** UUID v4 format validation (FF-03: never trust external tenant input) */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * Webhook route — mounted BEFORE auth middleware in server.ts.
@@ -46,11 +49,27 @@ export function createTelegramWebhookRouter(
         return res.status(400).json({ error: 'Missing tenantId' })
       }
 
-      const adapter = new TelegramAdapter(pool, io, botService, tenantId)
-      const handled = await adapter.handleUpdate(update)
+      // Validate tenantId is a proper UUID to prevent injection (FF-03)
+      if (!UUID_REGEX.test(tenantId)) {
+        console.error('[telegram-routes] Invalid tenantId format:', tenantId)
+        return res.status(400).json({ error: 'Invalid tenantId format' })
+      }
 
-      // Always respond 200 to Telegram to avoid retries
-      return res.json({ ok: true, handled })
+      // Acquire a tenant-scoped DB client with RLS context (FF-03, ADR-007)
+      let client: PoolClient | null = null
+      try {
+        client = await pool.connect()
+        await client.query('SELECT set_config($1, $2, false)', ['app.tenant_id', tenantId])
+
+        // Pass tenant-scoped client as pool — PoolClient.query() is compatible with Pool.query()
+        const adapter = new TelegramAdapter(client as unknown as Pool, io, botService, tenantId)
+        const handled = await adapter.handleUpdate(update)
+
+        // Always respond 200 to Telegram to avoid retries
+        return res.json({ ok: true, handled })
+      } finally {
+        if (client) client.release()
+      }
     } catch (err) {
       console.error('[telegram-routes] webhook error', err)
       // Still return 200 to Telegram to prevent retries

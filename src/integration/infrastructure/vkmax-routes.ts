@@ -7,11 +7,14 @@
  *   GET  /api/vkmax/status        — check connection status (requires auth)
  */
 import { Router, Request, Response, RequestHandler } from 'express'
-import { Pool } from 'pg'
+import { Pool, PoolClient } from 'pg'
 import { Server as SocketIOServer } from 'socket.io'
 import { VKMaxMCPService } from '@integration/services/vkmax-mcp-service'
 import { VKMaxAdapter, VKMaxUpdate } from '@integration/adapters/vkmax-adapter'
 import { TenantRequest } from '@shared/middleware/tenant.middleware'
+
+/** UUID v4 format validation (FF-03: never trust external tenant input) */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * Webhook route — mounted BEFORE auth middleware in server.ts.
@@ -50,11 +53,27 @@ export function createVKMaxWebhookRouter(
         return res.status(400).json({ error: 'Missing tenantId' })
       }
 
-      const adapter = new VKMaxAdapter(pool, io, mcpService, tenantId)
-      const handled = await adapter.handleUpdate(update)
+      // Validate tenantId is a proper UUID to prevent injection (FF-03)
+      if (!UUID_REGEX.test(tenantId)) {
+        console.error('[vkmax-routes] Invalid tenantId format:', tenantId)
+        return res.status(400).json({ error: 'Invalid tenantId format' })
+      }
 
-      // Always respond 'ok' to VK Max to avoid retries
-      return res.send('ok')
+      // Acquire a tenant-scoped DB client with RLS context (FF-03, ADR-007)
+      let client: PoolClient | null = null
+      try {
+        client = await pool.connect()
+        await client.query('SELECT set_config($1, $2, false)', ['app.tenant_id', tenantId])
+
+        // Pass tenant-scoped client as pool — PoolClient.query() is compatible with Pool.query()
+        const adapter = new VKMaxAdapter(client as unknown as Pool, io, mcpService, tenantId)
+        const handled = await adapter.handleUpdate(update)
+
+        // Always respond 'ok' to VK Max to avoid retries
+        return res.send('ok')
+      } finally {
+        if (client) client.release()
+      }
     } catch (err) {
       console.error('[vkmax-routes] webhook error', err)
       // Still return 'ok' to VK Max to prevent retries
