@@ -21,27 +21,27 @@ import type { DealClosedEvent } from '@integration/infrastructure/crm-webhook-ty
 
 function createMockAttributionRepo(): jest.Mocked<AttributionRepository> {
   return {
-    save: jest.fn(async (input: CreateAttributionInput): Promise<Attribution> => ({
+    save: jest.fn().mockImplementation(async (input: CreateAttributionInput): Promise<Attribution> => ({
       ...input,
       createdAt: new Date(),
     })),
-    findByDealId: jest.fn(async () => null),
-    findByDetectionId: jest.fn(async () => null),
-    findByTenantId: jest.fn(async () => []),
-    deleteById: jest.fn(async () => true),
+    findByDealId: jest.fn().mockResolvedValue(null),
+    findByDetectionId: jest.fn().mockResolvedValue(null),
+    findByTenantId: jest.fn().mockResolvedValue([]),
+    deleteById: jest.fn().mockResolvedValue(true),
   }
 }
 
 function createMockPQLDetectionLookup(): jest.Mocked<PQLDetectionLookup> {
   return {
-    findByContactEmail: jest.fn(async () => null),
-    findById: jest.fn(async () => null),
+    findByContactEmail: jest.fn().mockResolvedValue(null),
+    findById: jest.fn().mockResolvedValue(null),
   }
 }
 
 function createMockTenantLookup(): jest.Mocked<TenantLookup> {
   return {
-    findByAmoCRMAccountId: jest.fn(async () => 'tenant-001'),
+    findByAmoCRMAccountId: jest.fn().mockResolvedValue('tenant-001'),
   }
 }
 

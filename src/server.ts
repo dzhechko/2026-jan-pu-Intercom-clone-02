@@ -203,7 +203,7 @@ const emailService = new StubEmailService()
 const notificationService = new NotificationService({
   notificationRepo,
   emailService,
-  pushEmitter: io,
+  pushEmitter: { toRoom: (room: string) => io.to(room) },
 })
 
 // BC-01: /chat namespace — widget + operator real-time messaging

@@ -12,7 +12,7 @@ describe('Message formatting', () => {
     })
 
     it('should identify OUTBOUND as operator messages (displayed on the right)', () => {
-      const direction = 'OUTBOUND'
+      const direction: string = 'OUTBOUND'
       const isInbound = direction === 'INBOUND'
       expect(isInbound).toBe(false)
     })

@@ -12,8 +12,8 @@ import type { FeedbackLabel } from './ml-training-service'
 
 function createMockModelRepo(): jest.Mocked<MLModelRepository> {
   return {
-    save: jest.fn(async (m: ModelWeights) => m),
-    findByTenantId: jest.fn(async () => null),
+    save: jest.fn().mockImplementation(async (m: ModelWeights) => m),
+    findByTenantId: jest.fn().mockResolvedValue(null),
   }
 }
 

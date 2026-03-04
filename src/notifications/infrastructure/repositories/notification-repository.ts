@@ -113,7 +113,7 @@ export class PgNotificationRepository implements NotificationRepository {
     `
     try {
       const result = await this.pool.query(query, [id, operatorId])
-      return result.rowCount > 0
+      return (result.rowCount ?? 0) > 0
     } catch (err) {
       console.error('[notification-repo] markAsRead error', err)
       return false

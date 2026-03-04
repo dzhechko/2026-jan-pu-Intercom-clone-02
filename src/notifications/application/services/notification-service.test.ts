@@ -14,17 +14,17 @@ import { EmailService, EmailPayload } from '@notifications/infrastructure/email-
 
 function createMockNotificationRepo(): jest.Mocked<NotificationRepository> {
   return {
-    save: jest.fn(async (n: Notification) => n),
-    findByDialogId: jest.fn(async () => []),
-    findByOperatorId: jest.fn(async () => []),
-    countUnread: jest.fn(async () => 0),
-    markAsRead: jest.fn(async () => true),
+    save: jest.fn().mockImplementation(async (n: Notification) => n),
+    findByDialogId: jest.fn().mockResolvedValue([]),
+    findByOperatorId: jest.fn().mockResolvedValue([]),
+    countUnread: jest.fn().mockResolvedValue(0),
+    markAsRead: jest.fn().mockResolvedValue(true),
   }
 }
 
 function createMockEmailService(): jest.Mocked<EmailService> {
   return {
-    send: jest.fn(async () => true),
+    send: jest.fn().mockResolvedValue(true),
   }
 }
 

@@ -19,7 +19,7 @@ export function createMemoryAIRouter(pool: Pool, memoryAIService: MemoryAIServic
    */
   router.get('/contact/:email', async (req, res) => {
     const { email } = req.params
-    const { tenantId } = req as TenantRequest
+    const { tenantId } = req as unknown as TenantRequest
 
     if (!email || !tenantId) {
       return res.status(400).json({ error: 'Missing email or tenant context' })
@@ -49,7 +49,7 @@ export function createMemoryAIRouter(pool: Pool, memoryAIService: MemoryAIServic
    */
   router.get('/:dialogId', async (req, res) => {
     const { dialogId } = req.params
-    const { tenantId } = req as TenantRequest
+    const { tenantId } = req as unknown as TenantRequest
 
     if (!dialogId || !tenantId) {
       return res.status(400).json({ error: 'Missing dialogId or tenant context' })

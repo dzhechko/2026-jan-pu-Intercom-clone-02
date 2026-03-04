@@ -110,7 +110,7 @@ export class NotificationService {
       // Send to operator (if assigned) and admin
       const recipients = [
         detection.contactEmail ? undefined : undefined, // Operator email would come from user service
-      ].filter(Boolean) as string[]
+      ].filter(Boolean) as unknown as string[]
 
       // For now, log the email (stub implementation)
       await this.email.send({

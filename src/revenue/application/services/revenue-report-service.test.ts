@@ -22,50 +22,50 @@ import { RevenueReport, ReportPeriod } from '@revenue/domain/aggregates/revenue-
 
 function createMockReportRepo(): jest.Mocked<RevenueReportRepository> {
   return {
-    save: jest.fn(async (r: RevenueReport) => r),
-    update: jest.fn(async (r: RevenueReport) => r),
-    findById: jest.fn(async () => null),
-    findByPeriod: jest.fn(async () => null),
-    findByTenantId: jest.fn(async () => []),
+    save: jest.fn().mockImplementation(async (r: RevenueReport) => r),
+    update: jest.fn().mockImplementation(async (r: RevenueReport) => r),
+    findById: jest.fn().mockResolvedValue(null),
+    findByPeriod: jest.fn().mockResolvedValue(null),
+    findByTenantId: jest.fn().mockResolvedValue([]),
   }
 }
 
-function createMockPQLReader(detections: PQLDetectionForReport[] = []): jest.Mocked<PQLDetectionReader> {
+function createMockPQLReader(detections: PQLDetectionForReport[] = []) {
   return {
-    findByTenantIdForPeriod: jest.fn(async () => detections),
-  }
+    findByTenantIdForPeriod: jest.fn().mockResolvedValue(detections),
+  } as jest.Mocked<PQLDetectionReader>
 }
 
-function createMockCRMReader(deals: CRMDealForReport[] = []): jest.Mocked<CRMDealReader> {
+function createMockCRMReader(deals: CRMDealForReport[] = []) {
   return {
-    findClosedDealsForPeriod: jest.fn(async () => deals),
-  }
+    findClosedDealsForPeriod: jest.fn().mockResolvedValue(deals),
+  } as jest.Mocked<CRMDealReader>
 }
 
-function createMockTenantReader(): jest.Mocked<TenantReader> {
+function createMockTenantReader() {
   return {
-    findAllActive: jest.fn(async () => [
+    findAllActive: jest.fn().mockResolvedValue([
       { id: 'tenant-001', name: 'Acme Corp', billingEmail: 'billing@acme.com' },
     ]),
-    findById: jest.fn(async () => ({
+    findById: jest.fn().mockResolvedValue({
       id: 'tenant-001',
       name: 'Acme Corp',
       billingEmail: 'billing@acme.com',
-    })),
-  }
+    }),
+  } as jest.Mocked<TenantReader>
 }
 
-function createMockDialogReader(): jest.Mocked<DialogReader> {
+function createMockDialogReader() {
   return {
-    findOperatorByDialogId: jest.fn(async () => 'operator-001'),
-    countByTenantForPeriod: jest.fn(async () => 150),
-  }
+    findOperatorByDialogId: jest.fn().mockResolvedValue('operator-001'),
+    countByTenantForPeriod: jest.fn().mockResolvedValue(150),
+  } as jest.Mocked<DialogReader>
 }
 
-function createMockEmailSender(): jest.Mocked<ReportEmailSender> {
+function createMockEmailSender() {
   return {
-    send: jest.fn(async () => true),
-  }
+    send: jest.fn().mockResolvedValue(true),
+  } as jest.Mocked<ReportEmailSender>
 }
 
 function createDefaultDetections(): PQLDetectionForReport[] {

@@ -88,7 +88,7 @@
       "description": "Automatic PDF/email monthly: X leads found, Y closed, RUB Z revenue attributed.",
       "priority": "must",
       "milestone": "M2",
-      "status": "next",
+      "status": "done",
       "bc": ["revenue"],
       "depends_on": ["FR-02", "FR-03"]
     },
@@ -98,7 +98,7 @@
       "description": "Dashboard: dialog count, PQL%, response time, PQL->deal conversion.",
       "priority": "must",
       "milestone": "M2",
-      "status": "next",
+      "status": "done",
       "bc": ["revenue"],
       "depends_on": ["FR-06"]
     },
@@ -128,7 +128,7 @@
       "description": "After 1K dialogs — retrain on real data. Accuracy >= 75%.",
       "priority": "should",
       "milestone": "M3",
-      "status": "next",
+      "status": "done",
       "bc": ["pql"],
       "depends_on": ["FR-01", "FR-02"]
     },
@@ -138,7 +138,7 @@
       "description": "On PQL deal close — auto-attribute in Revenue Report via amoCRM MCP.",
       "priority": "should",
       "milestone": "M2",
-      "status": "next",
+      "status": "done",
       "bc": ["revenue", "integration"],
       "depends_on": ["FR-06"]
     },

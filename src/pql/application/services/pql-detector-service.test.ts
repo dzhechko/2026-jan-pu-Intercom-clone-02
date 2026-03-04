@@ -10,15 +10,15 @@ import { PQLDetectorService, PQLDetection, PQLDetectionRepository, DialogPQLUpda
 
 function createMockDetectionRepo(): jest.Mocked<PQLDetectionRepository> {
   return {
-    save: jest.fn(async (d: PQLDetection) => d),
-    findByDialogId: jest.fn(async () => []),
-    findByTenantId: jest.fn(async () => []),
+    save: jest.fn().mockImplementation(async (d: PQLDetection) => d),
+    findByDialogId: jest.fn().mockResolvedValue([]),
+    findByTenantId: jest.fn().mockResolvedValue([]),
   }
 }
 
 function createMockDialogUpdater(): jest.Mocked<DialogPQLUpdater> {
   return {
-    updatePQLScore: jest.fn(async () => null),
+    updatePQLScore: jest.fn().mockResolvedValue(null),
   }
 }
 
