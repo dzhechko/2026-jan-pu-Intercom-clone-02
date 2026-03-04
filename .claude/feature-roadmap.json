@@ -48,7 +48,7 @@
       "description": "Operator sees fire-emoji label + explanation 'Why lead' in sidebar. Click-through to CRM card.",
       "priority": "must",
       "milestone": "M1",
-      "status": "next",
+      "status": "done",
       "bc": ["pql", "conversation"],
       "depends_on": ["FR-01", "FR-07"]
     },
@@ -78,7 +78,7 @@
       "description": "Push/email to operator on every new hot lead (real-time).",
       "priority": "should",
       "milestone": "M1",
-      "status": "planned",
+      "status": "next",
       "bc": ["notifications"],
       "depends_on": ["FR-02"]
     },
@@ -128,7 +128,7 @@
       "description": "After 1K dialogs — retrain on real data. Accuracy >= 75%.",
       "priority": "should",
       "milestone": "M3",
-      "status": "planned",
+      "status": "next",
       "bc": ["pql"],
       "depends_on": ["FR-01", "FR-02"]
     },

@@ -52,6 +52,40 @@ Orchestrate full feature development lifecycle: Plan → Validate → Implement 
 3. Run tests: `npm test`
 4. Verify no cross-BC imports
 
+## Phase 5: Document (MANDATORY)
+
+1. **MUST** create feature documentation in `docs/features/{feature-id}-{feature-name}.md`
+2. This is the FINAL documentation — not a plan, but a record of what was built
+3. Template:
+
+```markdown
+# {Feature ID}: {Feature Name}
+**Status:** Done | **BC:** {bounded contexts} | **Priority:** {priority} | **Milestone:** {milestone}
+
+## Summary
+{2-3 sentences describing what was implemented}
+
+## Files Created/Modified
+{Table: File | Role}
+
+## API Endpoints (if applicable)
+{Table: Method | Path | Description}
+
+## Socket.io Events (if applicable)
+{Table: Event | Direction | Payload}
+
+## Key Decisions
+{Numbered list of important implementation decisions}
+
+## Tests
+{List of test files with test count and what they cover}
+
+## Acceptance Criteria
+{Checklist with [x] for verified criteria}
+```
+
+4. This file MUST be committed alongside the feature code
+
 ## Git
 ```
 feat({bc}): add {feature-name}
