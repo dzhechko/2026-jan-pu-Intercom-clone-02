@@ -1,8 +1,11 @@
 # Development Insights — КоммуниК
 
 ## Recent
+- [2026-03-04] **CRITICAL:** Cross-tenant operator assignment — missing tenant ownership check — security/CRITICAL
 - [2026-03-04] **CRITICAL:** AI Template Lossy Compression — COPY, don't summarize templates — tooling/CRITICAL
 - [2026-03-04] **CRITICAL:** /run protocol violation — never bypass skill chain — process/critical-lesson
+- [2026-03-04] Singleton Circuit Breaker — per-request CB instances bypass protection — integration/bug-fix
+- [2026-03-04] Webhook HMAC missing on Telegram + VK Max — security/finding
 - [2026-03-04] Jest mock strict typing — use mockResolvedValue — testing/pattern
 - [2026-03-04] Socket.io Server has no .toRoom() — wrap it — integration/gotcha
 - [2026-03-04] Wave-based parallel implementation — architecture/pattern
@@ -22,7 +25,12 @@
 - [Jest mock strict typing](detail/2026-03-04-jest-mock-strict-typing.md) — `mockResolvedValue()` not `async () =>`
 - [Jest config](detail/2026-03-04-jest-config-gotchas.md) — property names, global key, ts-node
 
+### Security (CRITICAL)
+- [Cross-tenant assign check](detail/2026-03-04-cross-tenant-assign-check.md) — **verify operator belongs to same tenant before assignment**
+- [Webhook HMAC missing](detail/2026-03-04-webhook-hmac-missing.md) — Telegram + VK Max accept unverified webhooks
+
 ### Integration
+- [Singleton Circuit Breaker](detail/2026-03-04-singleton-circuit-breaker.md) — **per-request CB instances = no protection**
 - [Socket.io toRoom wrapper](detail/2026-03-04-socketio-toroom-wrapper.md) — wrap io.to() for PushEmitter port
 - [Opossum types](detail/2026-03-04-opossum-circuit-breaker-types.md) — cast `fire()` to `Result<any>`
 
@@ -41,4 +49,4 @@
 - [P1 checklist](detail/2026-03-04-p1-checklist-validation.md) — audit with Master Validation Checklist
 
 ## Stats
-Total: 11 insights | Most active: tooling (3), integration (2), testing (2)
+Total: 14 insights | Most active: tooling (3), integration (3), security (2), testing (2)
