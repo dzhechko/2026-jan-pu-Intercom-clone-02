@@ -148,7 +148,7 @@
       "description": "Hotkeys for quick replies, status change, escalation.",
       "priority": "should",
       "milestone": "M2",
-      "status": "next",
+      "status": "done",
       "bc": ["conversation"],
       "depends_on": ["FR-07"]
     }
