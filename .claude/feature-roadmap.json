@@ -108,7 +108,7 @@
       "description": "Incoming via Messenger Max MCP (Cloud.ru). Russian corporate messenger.",
       "priority": "should",
       "milestone": "M2",
-      "status": "next",
+      "status": "done",
       "bc": ["conversation", "integration"],
       "depends_on": ["FR-07"]
     },
