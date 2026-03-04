@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, FormEvent } from 'react'
+import { useState, useRef, useEffect, FormEvent, MutableRefObject } from 'react'
 import type { Message, SenderType } from '../types'
 
 function senderBadge(senderType: SenderType) {
@@ -33,6 +33,8 @@ interface ChatAreaProps {
   onSendMessage: (content: string) => Promise<void>
   onTyping: (isTyping: boolean) => void
   dialogId: string | null
+  /** FR-14: Ref for triggering send from keyboard shortcut */
+  sendMessageRef?: MutableRefObject<(() => void) | null>
 }
 
 export function ChatArea({
@@ -42,6 +44,7 @@ export function ChatArea({
   onSendMessage,
   onTyping,
   dialogId,
+  sendMessageRef,
 }: ChatAreaProps) {
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -57,6 +60,27 @@ export function ChatArea({
   useEffect(() => {
     setInput('')
   }, [dialogId])
+
+  // FR-14: Expose send function via ref for keyboard shortcuts
+  useEffect(() => {
+    if (sendMessageRef) {
+      sendMessageRef.current = () => {
+        const inputEl = document.querySelector<HTMLInputElement>('[data-testid="message-input"]')
+        const value = inputEl?.value?.trim()
+        if (value && !sending) {
+          setInput('')
+          setSending(true)
+          onTyping(false)
+          onSendMessage(value)
+            .catch(() => setInput(value))
+            .finally(() => setSending(false))
+        }
+      }
+    }
+    return () => {
+      if (sendMessageRef) sendMessageRef.current = null
+    }
+  }, [sendMessageRef, sending, onSendMessage, onTyping])
 
   const handleInputChange = (value: string) => {
     setInput(value)
@@ -168,6 +192,7 @@ export function ChatArea({
           disabled={!input.trim() || sending}
           className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           data-testid="send-button"
+          title="Send message (Ctrl+Enter)"
         >
           {sending ? 'Sending...' : 'Send'}
         </button>

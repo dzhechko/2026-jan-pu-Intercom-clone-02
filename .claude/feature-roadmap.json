@@ -48,7 +48,7 @@
       "description": "Operator sees fire-emoji label + explanation 'Why lead' in sidebar. Click-through to CRM card.",
       "priority": "must",
       "milestone": "M1",
-      "status": "next",
+      "status": "done",
       "bc": ["pql", "conversation"],
       "depends_on": ["FR-01", "FR-07"]
     },
@@ -58,7 +58,7 @@
       "description": "Auto-load from amoCRM before operator responds: deals, contacts, history. Via amoCRM MCP.",
       "priority": "must",
       "milestone": "M1",
-      "status": "next",
+      "status": "done",
       "bc": ["pql", "integration"],
       "depends_on": ["FR-07"]
     },
@@ -68,7 +68,7 @@
       "description": "Incoming via Telegram Business/Bot API. Unified queue with web chat.",
       "priority": "must",
       "milestone": "M1",
-      "status": "next",
+      "status": "done",
       "bc": ["conversation", "integration"],
       "depends_on": ["FR-07"]
     },
@@ -78,7 +78,7 @@
       "description": "Push/email to operator on every new hot lead (real-time).",
       "priority": "should",
       "milestone": "M1",
-      "status": "planned",
+      "status": "next",
       "bc": ["notifications"],
       "depends_on": ["FR-02"]
     },
@@ -88,7 +88,7 @@
       "description": "Automatic PDF/email monthly: X leads found, Y closed, RUB Z revenue attributed.",
       "priority": "must",
       "milestone": "M2",
-      "status": "planned",
+      "status": "next",
       "bc": ["revenue"],
       "depends_on": ["FR-02", "FR-03"]
     },
@@ -108,7 +108,7 @@
       "description": "Incoming via Messenger Max MCP (Cloud.ru). Russian corporate messenger.",
       "priority": "should",
       "milestone": "M2",
-      "status": "planned",
+      "status": "next",
       "bc": ["conversation", "integration"],
       "depends_on": ["FR-07"]
     },
@@ -118,7 +118,7 @@
       "description": "Up to 10 operators, roles: admin/operator, assignment queue.",
       "priority": "should",
       "milestone": "M2",
-      "status": "planned",
+      "status": "next",
       "bc": ["iam", "conversation"],
       "depends_on": ["IAM-01", "FR-07"]
     },
@@ -128,7 +128,7 @@
       "description": "After 1K dialogs — retrain on real data. Accuracy >= 75%.",
       "priority": "should",
       "milestone": "M3",
-      "status": "planned",
+      "status": "next",
       "bc": ["pql"],
       "depends_on": ["FR-01", "FR-02"]
     },
@@ -148,7 +148,7 @@
       "description": "Hotkeys for quick replies, status change, escalation.",
       "priority": "should",
       "milestone": "M2",
-      "status": "planned",
+      "status": "next",
       "bc": ["conversation"],
       "depends_on": ["FR-07"]
     }

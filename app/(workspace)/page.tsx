@@ -1,12 +1,17 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useSocket } from './hooks/useSocket'
 import { useDialogs } from './hooks/useDialogs'
 import { useMessages } from './hooks/useMessages'
+import { useKeyboardShortcuts, type KeyboardShortcutActions } from './hooks/useKeyboardShortcuts'
 import { DialogList } from './components/DialogList'
 import { ChatArea } from './components/ChatArea'
 import { RightPanel } from './components/RightPanel'
+import { ShortcutHelp } from './components/ShortcutHelp'
+import { NotificationBell } from './components/NotificationBell'
+import { useNotifications } from './hooks/useNotifications'
+import { QUICK_REPLY_TEMPLATES } from './constants/quickReplies'
 import type { OperatorProfile, Dialog } from './types'
 
 const TOKEN_KEY = 'kommuniq_token'
@@ -36,6 +41,12 @@ export default function WorkspacePage() {
     token,
     tenantId: operator?.tenantId ?? '',
     operatorId: operator?.id ?? '',
+  })
+
+  // FR-11: Notifications
+  const { notifications, unreadCount, markAsRead } = useNotifications({
+    token,
+    on,
   })
 
   // Dialogs
@@ -131,6 +142,90 @@ export default function WorkspacePage() {
     window.location.href = '/login'
   }, [])
 
+  // FR-14: Keyboard shortcuts state
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const sendMessageRef = useRef<(() => void) | null>(null)
+
+  // Dialog navigation helpers
+  const dialogIds = useMemo(() => dialogs.map((d) => d.id), [dialogs])
+
+  const navigateDialog = useCallback(
+    (direction: 'prev' | 'next') => {
+      if (dialogIds.length === 0) return
+      if (!selectedDialogId) {
+        handleSelectDialog(dialogIds[0])
+        return
+      }
+      const currentIdx = dialogIds.indexOf(selectedDialogId)
+      if (currentIdx === -1) {
+        handleSelectDialog(dialogIds[0])
+        return
+      }
+      const nextIdx =
+        direction === 'next'
+          ? Math.min(currentIdx + 1, dialogIds.length - 1)
+          : Math.max(currentIdx - 1, 0)
+      handleSelectDialog(dialogIds[nextIdx])
+    },
+    [dialogIds, selectedDialogId, handleSelectDialog],
+  )
+
+  const jumpToNextUnassigned = useCallback(() => {
+    const unassigned = dialogs.find(
+      (d) => d.status === 'OPEN' && !d.assignedOperatorId && d.id !== selectedDialogId,
+    )
+    if (unassigned) {
+      handleSelectDialog(unassigned.id)
+    }
+  }, [dialogs, selectedDialogId, handleSelectDialog])
+
+  // FR-14: Keyboard shortcut actions
+  const shortcutActions = useMemo<KeyboardShortcutActions>(
+    () => ({
+      onSendMessage: () => sendMessageRef.current?.(),
+      onFocusSearch: () => searchInputRef.current?.focus(),
+      onPreviousDialog: () => navigateDialog('prev'),
+      onNextDialog: () => navigateDialog('next'),
+      onNextUnassigned: jumpToNextUnassigned,
+      onAssignDialog: () => {
+        if (selectedDialogId && selectedDialog && selectedDialog.status === 'OPEN') {
+          handleAssign(selectedDialogId)
+        }
+      },
+      onCloseDialog: () => {
+        if (selectedDialogId && selectedDialog && selectedDialog.status !== 'CLOSED' && selectedDialog.status !== 'ARCHIVED') {
+          handleCloseDialog(selectedDialogId)
+        }
+      },
+      onEscape: () => {
+        if (shortcutHelpOpen) {
+          setShortcutHelpOpen(false)
+        } else {
+          setSelectedDialogId(null)
+        }
+      },
+      onQuickReply: (index: number) => {
+        if (selectedDialogId && index >= 0 && index < QUICK_REPLY_TEMPLATES.length) {
+          sendMessage(QUICK_REPLY_TEMPLATES[index].content)
+        }
+      },
+      onToggleHelp: () => setShortcutHelpOpen((prev) => !prev),
+    }),
+    [
+      navigateDialog,
+      jumpToNextUnassigned,
+      selectedDialogId,
+      selectedDialog,
+      handleAssign,
+      handleCloseDialog,
+      sendMessage,
+      shortcutHelpOpen,
+    ],
+  )
+
+  useKeyboardShortcuts({ actions: shortcutActions })
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Top bar */}
@@ -144,6 +239,20 @@ export default function WorkspacePage() {
           />
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShortcutHelpOpen(true)}
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors border border-gray-200 rounded px-1.5 py-0.5 font-mono"
+            title="Keyboard shortcuts (?)"
+            data-testid="shortcut-help-trigger"
+          >
+            ?
+          </button>
+          <NotificationBell
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onMarkAsRead={markAsRead}
+            onSelectDialog={handleSelectDialog}
+          />
           <span className="text-xs text-gray-500">{operator?.email}</span>
           <button
             onClick={handleLogout}
@@ -181,6 +290,7 @@ export default function WorkspacePage() {
             onSendMessage={sendMessage}
             onTyping={sendTyping}
             dialogId={selectedDialogId}
+            sendMessageRef={sendMessageRef}
           />
         </main>
 
@@ -197,6 +307,9 @@ export default function WorkspacePage() {
           />
         </aside>
       </div>
+
+      {/* FR-14: Keyboard shortcuts help modal */}
+      <ShortcutHelp open={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
     </div>
   )
 }

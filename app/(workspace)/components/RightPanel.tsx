@@ -41,6 +41,13 @@ function pqlTierDisplay(tier?: PQLTier) {
   return map[tier]
 }
 
+/** FR-13: Operator info for reassign dropdown */
+interface OperatorOption {
+  id: string
+  name: string
+  isOnline?: boolean
+}
+
 interface RightPanelProps {
   dialog: Dialog | null
   operatorId: string
@@ -49,6 +56,10 @@ interface RightPanelProps {
   onClose: (dialogId: string) => void
   onChangeStatus: (dialogId: string, status: string) => void
   onQuickReply: (content: string) => void
+  /** FR-13: List of operators for reassignment */
+  operators?: OperatorOption[]
+  /** FR-13: Callback when dialog is reassigned to another operator */
+  onReassign?: (dialogId: string, operatorId: string) => void
 }
 
 export function RightPanel({
@@ -59,6 +70,8 @@ export function RightPanel({
   onClose,
   onChangeStatus,
   onQuickReply,
+  operators,
+  onReassign,
 }: RightPanelProps) {
   const [pqlSignals, setPqlSignals] = useState<PQLSignal[]>([])
   const [loadingSignals, setLoadingSignals] = useState(false)
@@ -266,14 +279,18 @@ export function RightPanel({
           Quick Replies
         </h3>
         <div className="space-y-1.5">
-          {DEFAULT_QUICK_REPLIES.map((qr) => (
+          {DEFAULT_QUICK_REPLIES.map((qr, index) => (
             <button
               key={qr.id}
               onClick={() => onQuickReply(qr.content)}
-              className="w-full text-left text-xs px-2.5 py-1.5 rounded border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors text-gray-700"
+              className="w-full text-left text-xs px-2.5 py-1.5 rounded border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors text-gray-700 flex items-center justify-between"
               data-testid={`quick-reply-${qr.id}`}
+              title={index < 9 ? `Alt+${index + 1}` : undefined}
             >
-              {qr.label}
+              <span>{qr.label}</span>
+              {index < 9 && (
+                <kbd className="ml-1 text-[10px] text-gray-400 font-mono">Alt+{index + 1}</kbd>
+              )}
             </button>
           ))}
         </div>
@@ -290,8 +307,10 @@ export function RightPanel({
             onClick={() => onAssign(dialog.id)}
             className="w-full text-sm px-3 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors font-medium"
             data-testid="assign-button"
+            title="Assign to me (Alt+A)"
           >
             Assign to me
+            <kbd className="ml-2 text-xs text-blue-200 font-mono">Alt+A</kbd>
           </button>
         )}
 
@@ -300,8 +319,10 @@ export function RightPanel({
             onClick={() => onClose(dialog.id)}
             className="w-full text-sm px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
             data-testid="close-dialog-button"
+            title="Close dialog (Alt+C)"
           >
             Close dialog
+            <kbd className="ml-2 text-xs text-gray-400 font-mono">Alt+C</kbd>
           </button>
         )}
 
@@ -321,6 +342,36 @@ export function RightPanel({
           >
             Unassign
           </button>
+        )}
+
+        {/* FR-13: Reassign dropdown */}
+        {onReassign && operators && operators.length > 0 &&
+          (dialog.status === 'OPEN' || dialog.status === 'ASSIGNED') && (
+          <div data-testid="reassign-section">
+            <label className="text-xs text-gray-500 block mb-1">Reassign to:</label>
+            <select
+              className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              data-testid="reassign-select"
+              defaultValue=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  onReassign(dialog.id, e.target.value)
+                  e.target.value = ''
+                }
+              }}
+            >
+              <option value="" disabled>
+                Select operator...
+              </option>
+              {operators
+                .filter((op) => op.id !== dialog.assignedOperatorId && op.isOnline)
+                .map((op) => (
+                  <option key={op.id} value={op.id}>
+                    {op.name} {op.id === operatorId ? '(you)' : ''}
+                  </option>
+                ))}
+            </select>
+          </div>
         )}
       </div>
     </div>

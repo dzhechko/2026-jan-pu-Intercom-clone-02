@@ -26,7 +26,9 @@ import { DialogRepository } from './repositories/dialog-repository'
 import { MessageRepository } from './repositories/message-repository'
 import { PQLDetectorService, MessageEvent } from '@pql/application/services/pql-detector-service'
 import { analyzePQLInline } from '@pql/infrastructure/message-consumer'
+import { NotificationService } from '@notifications/application/services/notification-service'
 import { forwardToTelegramIfNeeded } from '@integration/adapters/telegram-outbound'
+import { forwardToVKMaxIfNeeded } from '@integration/adapters/vkmax-outbound'
 
 // ─── Zod schemas ────────────────────────────────────────────────────────────
 
@@ -59,7 +61,7 @@ const TypingSchema = z.object({
 
 // ─── Handler factory ─────────────────────────────────────────────────────────
 
-export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetector?: PQLDetectorService): Namespace {
+export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetector?: PQLDetectorService, notificationService?: NotificationService): Namespace {
   const nsp: Namespace = io.of('/chat')
   const dialogRepo = new DialogRepository(pool)
   const messageRepo = new MessageRepository(pool)
@@ -136,7 +138,7 @@ export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetecto
             content,
             senderType: 'CLIENT',
           }
-          analyzePQLInline(pqlDetector, nsp, pqlEvent).catch((err) =>
+          analyzePQLInline(pqlDetector, nsp, pqlEvent, notificationService).catch((err) =>
             console.error('[ws-handler] PQL analysis error', err),
           )
         }
@@ -182,6 +184,11 @@ export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetecto
         // FR-05: Forward to Telegram if this is a TELEGRAM dialog (fire-and-forget)
         forwardToTelegramIfNeeded(pool, dialogId, content).catch((err) => {
           console.error('[ws-handler] telegram forward error', err)
+        })
+
+        // FR-09: Forward to VK Max if this is a VK_MAX dialog (fire-and-forget)
+        forwardToVKMaxIfNeeded(pool, dialogId, content).catch((err) => {
+          console.error('[ws-handler] vkmax forward error', err)
         })
       } catch (err) {
         console.error('[ws-handler] operator:message error', err)

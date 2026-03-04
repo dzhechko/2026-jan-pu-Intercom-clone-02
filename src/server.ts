@@ -13,15 +13,25 @@ import { createTenantMiddleware } from '@shared/middleware/tenant.middleware'
 import { createChatRouter } from '@conversation/infrastructure/chat-routes'
 import { registerChatNamespace } from '@conversation/infrastructure/ws-handler'
 import { createPQLRouter } from '@pql/infrastructure/pql-routes'
+import { createOperatorRouter } from '@iam/infrastructure/operator-routes'
+import { createAssignmentRouter } from '@conversation/infrastructure/assignment-routes'
+import { PresenceService } from '@iam/application/services/presence-service'
+import { AssignmentService } from '@conversation/application/services/assignment-service'
 import { PQLDetectorService } from '@pql/application/services/pql-detector-service'
 import { PgPQLDetectionRepository } from '@pql/infrastructure/repositories/pql-detection-repository'
 import { DialogRepository } from '@conversation/infrastructure/repositories/dialog-repository'
 import { analyzePQLInline } from '@pql/infrastructure/message-consumer'
 import { createTelegramWebhookRouter, createTelegramManagementRouter } from '@integration/infrastructure/telegram-routes'
 import { registerTelegramOutbound } from '@integration/adapters/telegram-outbound'
+import { createVKMaxWebhookRouter, createVKMaxManagementRouter } from '@integration/infrastructure/vkmax-routes'
+import { registerVKMaxOutbound } from '@integration/adapters/vkmax-outbound'
 import { createMemoryAIRouter } from '@pql/infrastructure/memory-ai-routes'
 import { MemoryAIService } from '@pql/application/services/memory-ai-service'
 import { AmoCRMMCPAdapter } from '@integration/adapters/amocrm-mcp-adapter'
+import { createNotificationRouter } from '@notifications/infrastructure/notification-routes'
+import { NotificationService } from '@notifications/application/services/notification-service'
+import { PgNotificationRepository } from '@notifications/infrastructure/repositories/notification-repository'
+import { StubEmailService } from '@notifications/infrastructure/email-service'
 
 const app = express()
 const httpServer = createServer(app)
@@ -59,6 +69,9 @@ app.get('/api/health', async (_req, res) => {
 // FR-05: Telegram webhook — BEFORE auth middleware (Telegram sends updates directly)
 app.use('/api/webhooks/telegram', createTelegramWebhookRouter(pool, io))
 
+// FR-09: VK Max webhook — BEFORE auth middleware (VK Max sends updates directly)
+app.use('/api/webhooks/vkmax', createVKMaxWebhookRouter(pool, io))
+
 // Auth middleware for all /api routes (except health and webhooks)
 app.use('/api', createTenantMiddleware(pool))
 
@@ -71,20 +84,55 @@ app.use('/api/pql', createPQLRouter(pool))
 // FR-05: Telegram management routes (requires auth)
 app.use('/api/telegram', createTelegramManagementRouter())
 
+// FR-09: VK Max management routes (requires auth)
+app.use('/api/vkmax', createVKMaxManagementRouter())
+
+// FR-13: Operator management routes
+app.use('/api/operators', createOperatorRouter(pool, redis))
+
+// FR-13: Assignment service + routes
+const presenceService = new PresenceService(redis)
+const assignmentService = new AssignmentService(pool, presenceService)
+app.use('/api', createAssignmentRouter(pool, assignmentService))
+
 // FR-03: Memory AI — CRM context routes
 const crmAdapter = new AmoCRMMCPAdapter(process.env.AMOCRM_MCP_URL || '')
 const memoryAIService = new MemoryAIService(crmAdapter, redis)
 app.use('/api/memory', createMemoryAIRouter(pool, memoryAIService))
 
-// Socket.io namespace per tenant (ADR-005, PO-03)
+// FR-11: Notification routes
+app.use('/api/notifications', createNotificationRouter(pool))
+
+// FR-13: Presence service for operator online/offline tracking
+const serverPresenceService = new PresenceService(redis)
+
+// Socket.io namespace per tenant (ADR-005, PO-03) + FR-13 presence tracking
 io.on('connection', (socket) => {
   const { tenantId, operatorId } = socket.handshake.auth
   if (tenantId) {
     socket.join(`tenant:${tenantId}`)
     if (operatorId) {
       socket.join(`operator:${operatorId}`)
+      // FR-13: Track operator presence on connect
+      serverPresenceService.setOnline(operatorId, tenantId).catch((err) =>
+        console.error('[server] presence setOnline error', err),
+      )
+      // Notify other operators about presence change
+      io.to(`tenant:${tenantId}`).emit('operator:online', { operatorId })
     }
   }
+
+  socket.on('disconnect', () => {
+    const { tenantId: tid, operatorId: oid } = socket.handshake.auth
+    if (tid && oid) {
+      // FR-13: Track operator presence on disconnect
+      serverPresenceService.setOffline(oid, tid).catch((err) =>
+        console.error('[server] presence setOffline error', err),
+      )
+      // Notify other operators about presence change
+      io.to(`tenant:${tid}`).emit('operator:offline', { operatorId: oid })
+    }
+  })
 })
 
 // BC-02: PQL detector service wiring
@@ -92,11 +140,23 @@ const pqlDetectionRepo = new PgPQLDetectionRepository(pool)
 const dialogRepo = new DialogRepository(pool)
 const pqlDetector = new PQLDetectorService(pqlDetectionRepo, dialogRepo)
 
+// FR-11: Notification service wiring — push via Socket.io + email (stub)
+const notificationRepo = new PgNotificationRepository(pool)
+const emailService = new StubEmailService()
+const notificationService = new NotificationService({
+  notificationRepo,
+  emailService,
+  pushEmitter: io,
+})
+
 // BC-01: /chat namespace — widget + operator real-time messaging
-const chatNsp = registerChatNamespace(io, pool, pqlDetector)
+const chatNsp = registerChatNamespace(io, pool, pqlDetector, notificationService)
 
 // FR-05: Telegram outbound — intercept operator replies to TELEGRAM dialogs
 registerTelegramOutbound(io, pool)
+
+// FR-09: VK Max outbound — intercept operator replies to VK_MAX dialogs
+registerVKMaxOutbound(io, pool)
 
 // Start server
 const PORT = process.env.API_PORT || 4000

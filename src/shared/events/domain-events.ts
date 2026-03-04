@@ -82,6 +82,16 @@ export interface OperatorInvited extends DomainEvent {
   readonly email: string
 }
 
+// BC-06: Notification Events
+export interface PQLNotificationSent extends DomainEvent {
+  readonly type: 'PQLNotificationSent'
+  readonly notificationId: string
+  readonly dialogId: string
+  readonly tier: 'HOT' | 'WARM' | 'COLD'
+  readonly channel: 'push' | 'email'
+  readonly operatorId: string
+}
+
 // Union type for all events
 export type KommuniqEvent =
   | DialogStarted
@@ -93,3 +103,4 @@ export type KommuniqEvent =
   | ReportGenerated
   | RevenueAttributed
   | OperatorInvited
+  | PQLNotificationSent

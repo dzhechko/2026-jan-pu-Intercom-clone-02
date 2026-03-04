@@ -10,10 +10,12 @@
  */
 import { Namespace } from 'socket.io'
 import { PQLDetectorService, MessageEvent, PQLDetection } from '@pql/application/services/pql-detector-service'
+import { NotificationService } from '@notifications/application/services/notification-service'
 
 export interface PQLMessageConsumerDeps {
   chatNamespace: Namespace
   pqlDetector: PQLDetectorService
+  notificationService?: NotificationService
 }
 
 /**
@@ -23,7 +25,7 @@ export interface PQLMessageConsumerDeps {
  * Usage in server.ts:
  *   registerPQLConsumer({ chatNamespace: nsp, pqlDetector })
  */
-export function registerPQLConsumer({ chatNamespace, pqlDetector }: PQLMessageConsumerDeps): void {
+export function registerPQLConsumer({ chatNamespace, pqlDetector, notificationService }: PQLMessageConsumerDeps): void {
   chatNamespace.on('connection', (socket) => {
     /**
      * Internal event: triggered by ws-handler after saving a CLIENT message.
@@ -48,6 +50,11 @@ export function registerPQLConsumer({ chatNamespace, pqlDetector }: PQLMessageCo
             tier: detection.tier,
             topSignals: detection.topSignals,
           })
+
+          // FR-11: Trigger PQL pulse notifications (push + email)
+          if (notificationService) {
+            await triggerPQLNotification(notificationService, detection)
+          }
         }
       } catch (err) {
         console.error('[pql-consumer] analysis error', err)
@@ -64,6 +71,7 @@ export async function analyzePQLInline(
   pqlDetector: PQLDetectorService,
   chatNamespace: Namespace,
   event: MessageEvent,
+  notificationService?: NotificationService,
 ): Promise<PQLDetection | null> {
   try {
     const detection = await pqlDetector.analyze(event)
@@ -77,11 +85,39 @@ export async function analyzePQLInline(
         tier: detection.tier,
         topSignals: detection.topSignals,
       })
+
+      // FR-11: Trigger PQL pulse notifications (push + email)
+      if (notificationService) {
+        await triggerPQLNotification(notificationService, detection)
+      }
     }
 
     return detection
   } catch (err) {
     console.error('[pql-consumer] inline analysis error', err)
     return null
+  }
+}
+
+/**
+ * FR-11: Convert a PQL detection into notification payload and dispatch.
+ */
+async function triggerPQLNotification(
+  notificationService: NotificationService,
+  detection: PQLDetection,
+): Promise<void> {
+  try {
+    await notificationService.processNewPQLDetection({
+      detectionId: detection.id,
+      dialogId: detection.dialogId,
+      tenantId: detection.tenantId,
+      score: detection.score,
+      tier: detection.tier,
+      topSignals: detection.topSignals,
+      contactEmail: null, // Enriched from dialog context if available
+      assignedOperatorId: null, // Enriched from dialog context if available
+    })
+  } catch (err) {
+    console.error('[pql-consumer] notification error (non-blocking)', err)
   }
 }

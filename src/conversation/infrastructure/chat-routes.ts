@@ -12,6 +12,7 @@ import { TenantRequest } from '@shared/middleware/tenant.middleware'
 import { DialogRepository } from './repositories/dialog-repository'
 import { MessageRepository } from './repositories/message-repository'
 import { forwardToTelegramIfNeeded } from '@integration/adapters/telegram-outbound'
+import { forwardToVKMaxIfNeeded } from '@integration/adapters/vkmax-outbound'
 
 const SendMessageSchema = z.object({
   content: z.string().min(1).max(10_000),
@@ -114,6 +115,11 @@ export function createChatRouter(pool: Pool): Router {
       // FR-05: Forward to Telegram if this is a TELEGRAM dialog (fire-and-forget)
       forwardToTelegramIfNeeded(pool, req.params.id, parsed.data.content).catch((err) => {
         console.error('[chat-routes] telegram forward error', err)
+      })
+
+      // FR-09: Forward to VK Max if this is a VK_MAX dialog (fire-and-forget)
+      forwardToVKMaxIfNeeded(pool, req.params.id, parsed.data.content).catch((err) => {
+        console.error('[chat-routes] vkmax forward error', err)
       })
 
       return res.status(201).json({ message })
