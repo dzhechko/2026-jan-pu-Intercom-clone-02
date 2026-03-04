@@ -25,6 +25,23 @@ From the Instrument Map this module uses:
 
 ---
 
+## ANTI-COMPRESSION RULE (CRITICAL)
+
+> **NEVER summarize, shorten, or compress templates when generating output files.**
+> When a template is referenced via `view()`, the output file MUST preserve:
+> - ALL sections, tables, and structural elements from the template
+> - ALL agent/swarm definitions with their full scope descriptions
+> - ALL checkpoint markers and quality gates
+> - ALL directory trees and file structure examples
+>
+> If your output is significantly shorter than the template source, you are
+> compressing — STOP and re-generate with full content.
+>
+> The word "Generate" in item descriptions means "COPY the template structure
+> and ADAPT project-specific values" — it does NOT mean "write a shorter version".
+
+---
+
 ## Process
 
 ### P0 Mandatory Items (always generated)
@@ -208,39 +225,26 @@ command with:
 
 **Template:** `view() references/templates/feature-lifecycle.md` (Section 2)
 
-Generate `.claude/commands/feature.md` -- the 4-phase feature lifecycle command:
+> **CRITICAL: COPY, DO NOT SUMMARIZE.**
+> Read Section 2 from the template file VERBATIM.
+> Copy the FULL text of Section 2 into `.claude/commands/feature.md`.
+> Only adapt project-specific values (skill paths, BC names, git conventions).
+> DO NOT compress, shorten, simplify, or "generate a version of" the template.
+> The output file MUST contain ALL phases, ALL tables, ALL agent definitions,
+> ALL checkpoint markers, and the FULL completion summary with directory tree.
+> If the output is shorter than 100 lines, you have compressed it — RE-DO.
 
-```
-Phase 0: PRE-FLIGHT CHECK
-  Verify all required skills exist in .claude/skills/
-  ABORT if sparc-prd-mini, requirements-validator, or brutal-honesty-review missing
-  WARN if explore, goap-research, or problem-solver-enhanced missing
-
-Phase 1: PLAN (sparc-prd-mini)
-  Create docs/features/<feature-name>/sparc/
-  Run sparc-prd-mini Gate -> assess clarity
-  Generate 9 SPARC documents
-  Commit: docs(feature): SPARC planning for <feature-name>
-
-Phase 2: VALIDATE (requirements-validator, swarm)
-  5 parallel validation agents
-  Iterative loop (max 3 iterations)
-  Minimum score: 70/100, no BLOCKED items
-  Save validation-report.md
-  Commit: docs(feature): validation complete for <feature-name>
-
-Phase 3: IMPLEMENT (swarm + parallel tasks)
-  Read validated SPARC docs as source of truth
-  Use @planner, @architect, implementation agents
-  Modular design for reuse
-  Commit per logical unit: feat(<feature-name>): <what>
-
-Phase 4: REVIEW (brutal-honesty-review, swarm)
-  5 parallel review agents (code-quality, architecture, security, performance, testing)
-  Fix all critical/major issues
-  Save review-report.md
-  Commit: docs(feature): review complete for <feature-name>
-```
+**Validation checklist (verify before writing):**
+- [ ] Phase 0 PRE-FLIGHT CHECK with skill verification table present
+- [ ] Phase 1 PLAN creates `docs/features/<feature-name>/sparc/` directory
+- [ ] Phase 1 lists all 9 SPARC documents by name
+- [ ] Phase 2 VALIDATE has swarm agent table (5 agents)
+- [ ] Phase 2 has iterative loop (max 3 iterations) with score ≥70 gate
+- [ ] Phase 3 IMPLEMENT references @planner, @architect agents
+- [ ] Phase 4 REVIEW has swarm agent table (5 agents)
+- [ ] Completion section has full directory tree showing sparc/ subdirectory
+- [ ] Git commit format section present with all 5 commit types
+- [ ] Output file is ≥100 lines
 
 **Output path:** `.claude/commands/feature.md`
 

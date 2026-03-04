@@ -22,6 +22,15 @@ description: >
 
 Generate production-ready Claude Code instruments from **SPARC or idea2prd-manual documentation**.
 
+## CRITICAL: Anti-Compression Rule
+
+> **When generating files from templates, COPY the full template structure — do NOT summarize.**
+> Templates referenced via `view()` define the EXACT structure of output files.
+> Every section, table, agent definition, directory tree, and checkpoint MUST be preserved.
+> Only adapt project-specific values (names, paths, BC mappings).
+> "Generate" means "copy and adapt", NOT "write a shorter version".
+> If your output is significantly shorter than the template, you are compressing — RE-DO.
+
 ## Modular Architecture
 
 This skill uses a composable module system. Each phase is a self-contained module with

@@ -1,6 +1,7 @@
 # Development Insights — КоммуниК
 
 ## Recent
+- [2026-03-04] **CRITICAL:** AI Template Lossy Compression — COPY, don't summarize templates — tooling/CRITICAL
 - [2026-03-04] **CRITICAL:** /run protocol violation — never bypass skill chain — process/critical-lesson
 - [2026-03-04] Jest mock strict typing — use mockResolvedValue — testing/pattern
 - [2026-03-04] Socket.io Server has no .toRoom() — wrap it — integration/gotcha
@@ -34,9 +35,10 @@
 ### PQL Intelligence
 - [Cyrillic regex](detail/2026-03-04-cyrillic-regex-js.md) — `\w` is ASCII-only in JS
 
-### Tooling
+### Tooling (CRITICAL)
+- [Template Lossy Compression](detail/2026-03-04-template-lossy-compression.md) — **COPY templates verbatim, NEVER summarize**
 - [Module files](detail/2026-03-04-modular-skill-modules-must-read.md) — ALWAYS read modules/ directory
 - [P1 checklist](detail/2026-03-04-p1-checklist-validation.md) — audit with Master Validation Checklist
 
 ## Stats
-Total: 10 insights | Most active: integration (2), testing (2), tooling (2)
+Total: 11 insights | Most active: tooling (3), integration (2), testing (2)
