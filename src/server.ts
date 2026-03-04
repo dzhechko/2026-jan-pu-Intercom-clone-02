@@ -10,6 +10,8 @@ import helmet from 'helmet'
 import { Pool } from 'pg'
 import Redis from 'ioredis'
 import { createTenantMiddleware } from '@shared/middleware/tenant.middleware'
+import { createChatRouter } from '@conversation/infrastructure/chat-routes'
+import { registerChatNamespace } from '@conversation/infrastructure/ws-handler'
 
 const app = express()
 const httpServer = createServer(app)
@@ -47,12 +49,8 @@ app.get('/api/health', async (_req, res) => {
 // Auth middleware for all /api routes (except health)
 app.use('/api', createTenantMiddleware(pool))
 
-// TODO: Mount BC routers
-// app.use('/api/dialogs', dialogRouter)
-// app.use('/api/pql', pqlRouter)
-// app.use('/api/revenue', revenueRouter)
-// app.use('/api/operators', operatorRouter)
-// app.use('/api/tenants', tenantRouter)
+// BC-01: Conversation routes
+app.use('/api/dialogs', createChatRouter(pool))
 
 // Socket.io namespace per tenant (ADR-005, PO-03)
 io.on('connection', (socket) => {
@@ -64,6 +62,9 @@ io.on('connection', (socket) => {
     }
   }
 })
+
+// BC-01: /chat namespace — widget + operator real-time messaging
+registerChatNamespace(io, pool)
 
 // Start server
 const PORT = process.env.API_PORT || 4000
