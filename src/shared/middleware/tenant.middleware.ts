@@ -5,15 +5,21 @@
  *
  * CRITICAL: Every request MUST pass through this middleware before DB access.
  * RLS policies use current_setting('app.tenant_id') for row filtering.
+ *
+ * The middleware acquires a dedicated pool client for the request lifetime,
+ * sets the RLS GUC on it, and releases it when the response finishes.
+ * Downstream code should use req.dbClient (or pool.query with tenantId param
+ * as defense-in-depth).
  */
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
-import { Pool } from 'pg'
+import { Pool, PoolClient } from 'pg'
 
 export interface TenantRequest extends Request {
   tenantId: string
   operatorId: string
   role: 'ADMIN' | 'OPERATOR'
+  dbClient: PoolClient
 }
 
 export function createTenantMiddleware(pool: Pool) {
@@ -32,17 +38,21 @@ export function createTenantMiddleware(pool: Pool) {
         role: 'ADMIN' | 'OPERATOR'
       }
 
-      // Set RLS context — CRITICAL for tenant isolation (FF-03)
+      // Acquire a dedicated client for this request's lifetime (FF-03)
       const client = await pool.connect()
-      try {
-        await client.query(`SET app.tenant_id = '${payload.tenantId}'`)
-      } finally {
-        client.release()
-      }
+      // Set RLS context — persists for all queries on THIS client
+      await client.query(`SET app.tenant_id = '${payload.tenantId}'`)
 
-      ;(req as TenantRequest).tenantId = payload.tenantId
-      ;(req as TenantRequest).operatorId = payload.operatorId
-      ;(req as TenantRequest).role = payload.role
+      // Release client when response finishes (success or error)
+      res.on('close', () => {
+        client.release()
+      })
+
+      const tenantReq = req as TenantRequest
+      tenantReq.tenantId = payload.tenantId
+      tenantReq.operatorId = payload.operatorId
+      tenantReq.role = payload.role
+      tenantReq.dbClient = client
 
       next()
     } catch {

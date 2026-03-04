@@ -10,7 +10,7 @@ export class PgDialogReader implements DialogReader {
 
   async findOperatorByDialogId(dialogId: string): Promise<string | null> {
     const { rows } = await this.pool.query(
-      `SELECT operator_id FROM conversation.dialogs WHERE id = $1`,
+      `SELECT operator_id FROM conversations.dialogs WHERE id = $1`,
       [dialogId],
     )
     return rows[0]?.operator_id ?? null
@@ -23,7 +23,7 @@ export class PgDialogReader implements DialogReader {
   ): Promise<number> {
     const { rows } = await this.pool.query(
       `SELECT COUNT(*)::int AS count
-       FROM conversation.dialogs
+       FROM conversations.dialogs
        WHERE tenant_id = $1
          AND created_at >= $2
          AND created_at < $3`,

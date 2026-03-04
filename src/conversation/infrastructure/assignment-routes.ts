@@ -27,7 +27,12 @@ export function createAssignmentRouter(pool: Pool, assignmentService: Assignment
         return res.status(400).json({ error: 'Invalid body', details: parsed.error.flatten() })
       }
 
-      const dialog = await assignmentService.reassign(req.params.id, parsed.data.operatorId)
+      const tenantReq = req as TenantRequest
+      const dialog = await assignmentService.reassign(
+        req.params.id,
+        parsed.data.operatorId,
+        tenantReq.tenantId,
+      )
       if (!dialog) {
         return res.status(404).json({ error: 'Dialog not found or cannot be assigned' })
       }

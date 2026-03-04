@@ -17,7 +17,11 @@ import { TenantRequest } from '@shared/middleware/tenant.middleware'
  * Webhook route — mounted BEFORE auth middleware in server.ts.
  * Telegram sends POST requests here directly; no JWT required.
  */
-export function createTelegramWebhookRouter(pool: Pool, io: SocketIOServer): Router {
+export function createTelegramWebhookRouter(
+  pool: Pool,
+  io: SocketIOServer,
+  botService?: TelegramBotService | null,
+): Router {
   const router = Router()
 
   const handleWebhook: RequestHandler = async (req: Request, res: Response) => {
@@ -28,9 +32,8 @@ export function createTelegramWebhookRouter(pool: Pool, io: SocketIOServer): Rou
         return res.status(400).json({ error: 'Invalid Telegram update' })
       }
 
-      const botService = TelegramBotService.fromEnv()
       if (!botService) {
-        console.error('[telegram-routes] TELEGRAM_BOT_TOKEN not configured')
+        console.error('[telegram-routes] TelegramBotService not configured')
         return res.status(500).json({ error: 'Telegram bot not configured' })
       }
 
@@ -64,13 +67,11 @@ export function createTelegramWebhookRouter(pool: Pool, io: SocketIOServer): Rou
  * Management routes — mounted under auth middleware.
  * Requires valid JWT (operator/admin).
  */
-export function createTelegramManagementRouter(): Router {
+export function createTelegramManagementRouter(
+  botService?: TelegramBotService | null,
+): Router {
   const router = Router()
 
-  /**
-   * POST /api/telegram/setup
-   * Register the webhook URL with Telegram Bot API.
-   */
   const setupWebhook: RequestHandler = async (req: Request, res: Response) => {
     try {
       const tenantReq = req as TenantRequest
@@ -80,12 +81,10 @@ export function createTelegramManagementRouter(): Router {
         return res.status(400).json({ error: 'webhookUrl is required' })
       }
 
-      const botService = TelegramBotService.fromEnv()
       if (!botService) {
         return res.status(500).json({ error: 'TELEGRAM_BOT_TOKEN not configured' })
       }
 
-      // Append tenantId as query param so the webhook knows which tenant this is for
       const url = new URL(webhookUrl)
       url.searchParams.set('tenantId', tenantReq.tenantId)
 
@@ -97,13 +96,8 @@ export function createTelegramManagementRouter(): Router {
     }
   }
 
-  /**
-   * GET /api/telegram/status
-   * Check bot connection status.
-   */
   const getStatus: RequestHandler = async (_req: Request, res: Response) => {
     try {
-      const botService = TelegramBotService.fromEnv()
       if (!botService) {
         return res.json({ connected: false, reason: 'TELEGRAM_BOT_TOKEN not configured' })
       }

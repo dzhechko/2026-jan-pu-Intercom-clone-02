@@ -18,9 +18,13 @@ import { createAssignmentRouter } from '@conversation/infrastructure/assignment-
 import { PresenceService } from '@iam/application/services/presence-service'
 import { AssignmentService } from '@conversation/application/services/assignment-service'
 import { PQLDetectorService } from '@pql/application/services/pql-detector-service'
+import { MLModelService } from '@pql/application/services/ml-model-service'
+import { PgMLModelRepository } from '@pql/infrastructure/repositories/ml-model-repository'
 import { PgPQLDetectionRepository } from '@pql/infrastructure/repositories/pql-detection-repository'
 import { DialogRepository } from '@conversation/infrastructure/repositories/dialog-repository'
 import { analyzePQLInline } from '@pql/infrastructure/message-consumer'
+import { TelegramBotService } from '@integration/services/telegram-bot-service'
+import { VKMaxMCPService } from '@integration/services/vkmax-mcp-service'
 import { createTelegramWebhookRouter, createTelegramManagementRouter } from '@integration/infrastructure/telegram-routes'
 import { registerTelegramOutbound } from '@integration/adapters/telegram-outbound'
 import { createVKMaxWebhookRouter, createVKMaxManagementRouter } from '@integration/infrastructure/vkmax-routes'
@@ -63,6 +67,10 @@ app.use(helmet())
 app.use(cors())
 app.use(express.json())
 
+// Singleton MCP/Bot services — created once, shared across all requests (FF-04)
+const telegramBotService = TelegramBotService.fromEnv()
+const vkMaxMCPService = VKMaxMCPService.fromEnv()
+
 // Health check (no auth required)
 app.get('/api/health', async (_req, res) => {
   try {
@@ -75,10 +83,10 @@ app.get('/api/health', async (_req, res) => {
 })
 
 // FR-05: Telegram webhook — BEFORE auth middleware (Telegram sends updates directly)
-app.use('/api/webhooks/telegram', createTelegramWebhookRouter(pool, io))
+app.use('/api/webhooks/telegram', createTelegramWebhookRouter(pool, io, telegramBotService))
 
 // FR-09: VK Max webhook — BEFORE auth middleware (VK Max sends updates directly)
-app.use('/api/webhooks/vkmax', createVKMaxWebhookRouter(pool, io))
+app.use('/api/webhooks/vkmax', createVKMaxWebhookRouter(pool, io, vkMaxMCPService))
 
 // FR-12: amoCRM webhook — BEFORE auth middleware (amoCRM sends directly)
 const attributionRepo = new PgAttributionRepository(pool)
@@ -130,10 +138,10 @@ app.use('/api/pql', createFeedbackRouter(pool))
 app.use('/api/pql/ml', createMLRouter(pool))
 
 // FR-05: Telegram management routes (requires auth)
-app.use('/api/telegram', createTelegramManagementRouter())
+app.use('/api/telegram', createTelegramManagementRouter(telegramBotService))
 
 // FR-09: VK Max management routes (requires auth)
-app.use('/api/vkmax', createVKMaxManagementRouter())
+app.use('/api/vkmax', createVKMaxManagementRouter(vkMaxMCPService))
 
 // FR-13: Operator management routes
 app.use('/api/operators', createOperatorRouter(pool, redis))
@@ -192,10 +200,12 @@ io.on('connection', (socket) => {
   })
 })
 
-// BC-02: PQL detector service wiring
+// BC-02: PQL detector service wiring (with ML v1 integration — FR-10)
 const pqlDetectionRepo = new PgPQLDetectionRepository(pool)
 const dialogRepo = new DialogRepository(pool)
-const pqlDetector = new PQLDetectorService(pqlDetectionRepo, dialogRepo)
+const mlModelRepo = new PgMLModelRepository(pool)
+const mlModelService = new MLModelService(mlModelRepo)
+const pqlDetector = new PQLDetectorService(pqlDetectionRepo, dialogRepo, mlModelService)
 
 // FR-11: Notification service wiring — push via Socket.io + email (stub)
 const notificationRepo = new PgNotificationRepository(pool)
@@ -210,10 +220,10 @@ const notificationService = new NotificationService({
 const chatNsp = registerChatNamespace(io, pool, pqlDetector, notificationService)
 
 // FR-05: Telegram outbound — intercept operator replies to TELEGRAM dialogs
-registerTelegramOutbound(io, pool)
+registerTelegramOutbound(io, pool, telegramBotService)
 
 // FR-09: VK Max outbound — intercept operator replies to VK_MAX dialogs
-registerVKMaxOutbound(io, pool)
+registerVKMaxOutbound(io, pool, vkMaxMCPService)
 
 // Start server
 const PORT = process.env.API_PORT || 4000

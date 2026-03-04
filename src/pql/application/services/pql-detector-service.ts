@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { analyzeRules, RuleAnalysisResult } from '@pql/domain/rule-engine'
 import { DEFAULT_RULES } from '@pql/domain/value-objects/rule-set'
 import { calculateTier, PQLTier } from '@pql/domain/value-objects/pql-score'
+import type { MLModelService } from './ml-model-service'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -62,10 +63,15 @@ export interface DialogPQLUpdater {
 // ─── Service ────────────────────────────────────────────────────────────────
 
 export class PQLDetectorService {
+  private readonly mlModelService?: MLModelService
+
   constructor(
     private readonly detectionRepo: PQLDetectionRepository,
     private readonly dialogUpdater: DialogPQLUpdater,
-  ) {}
+    mlModelService?: MLModelService,
+  ) {
+    this.mlModelService = mlModelService
+  }
 
   /**
    * Analyze a message for PQL signals.
@@ -81,16 +87,40 @@ export class PQLDetectorService {
       return null
     }
 
-    // Run the rule engine
-    const result: RuleAnalysisResult = analyzeRules(event.content, DEFAULT_RULES)
+    // Try ML-adjusted prediction first (FR-10), fall back to rule-v1
+    let score: number
+    let tier: PQLTier
+    let signals: RuleAnalysisResult['signals']
+    let topSignals: RuleAnalysisResult['topSignals']
 
-    // Skip if no signals detected
-    if (result.signals.length === 0) {
-      return null
+    if (this.mlModelService) {
+      const mlPrediction = await this.mlModelService.predict(event.tenantId, event.content)
+      if (mlPrediction) {
+        score = mlPrediction.score
+        tier = mlPrediction.tier
+        signals = mlPrediction.signals
+        topSignals = mlPrediction.topSignals
+      } else {
+        // ML not ready — fall back to rule-v1
+        const result = analyzeRules(event.content, DEFAULT_RULES)
+        score = result.normalizedScore
+        tier = calculateTier(score)
+        signals = result.signals
+        topSignals = result.topSignals
+      }
+    } else {
+      // No ML service configured — use rule-v1
+      const result = analyzeRules(event.content, DEFAULT_RULES)
+      score = result.normalizedScore
+      tier = calculateTier(score)
+      signals = result.signals
+      topSignals = result.topSignals
     }
 
-    // Calculate tier
-    const tier = calculateTier(result.normalizedScore)
+    // Skip if no signals detected
+    if (signals.length === 0) {
+      return null
+    }
 
     // Build detection record
     const detection: PQLDetection = {
@@ -98,15 +128,15 @@ export class PQLDetectorService {
       dialogId: event.dialogId,
       tenantId: event.tenantId,
       messageId: event.messageId,
-      score: result.normalizedScore,
+      score,
       tier,
-      signals: result.signals.map((s) => ({
+      signals: signals.map((s) => ({
         ruleId: s.ruleId,
         type: s.type,
         weight: s.weight,
         matchedText: s.matchedText,
       })),
-      topSignals: result.topSignals.map((s) => ({
+      topSignals: topSignals.map((s) => ({
         ruleId: s.ruleId,
         type: s.type,
         weight: s.weight,
@@ -119,7 +149,7 @@ export class PQLDetectorService {
     await this.detectionRepo.save(detection)
 
     // Update dialog aggregate with latest PQL score/tier
-    await this.dialogUpdater.updatePQLScore(event.dialogId, result.normalizedScore, tier)
+    await this.dialogUpdater.updatePQLScore(event.dialogId, score, tier)
 
     return detection
   }

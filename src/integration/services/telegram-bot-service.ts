@@ -1,13 +1,21 @@
 /**
  * Telegram Bot API Service — FR-05 Telegram Channel
  *
- * Thin HTTP client for Telegram Bot API.
- * Uses native fetch (Node 18+), no external dependencies.
+ * Thin HTTP client for Telegram Bot API with Circuit Breaker (FF-04).
+ * Uses native fetch (Node 18+) + opossum circuit breaker.
  *
  * Bot token sourced from TELEGRAM_BOT_TOKEN env var.
+ * MUST be instantiated as a singleton at server startup — never per-request.
  */
+import CircuitBreaker from 'opossum'
 
 const TELEGRAM_API_BASE = 'https://api.telegram.org'
+
+const CIRCUIT_BREAKER_OPTIONS = {
+  timeout: 3000,
+  errorThresholdPercentage: 50,
+  resetTimeout: 30000,
+}
 
 export interface TelegramSendResult {
   ok: boolean
@@ -38,9 +46,25 @@ export interface TelegramWebhookResult {
 
 export class TelegramBotService {
   private readonly apiBase: string
+  private readonly sendBreaker: CircuitBreaker
 
   constructor(private readonly botToken: string) {
     this.apiBase = `${TELEGRAM_API_BASE}/bot${botToken}`
+
+    this.sendBreaker = new CircuitBreaker(
+      this._sendMessage.bind(this),
+      CIRCUIT_BREAKER_OPTIONS,
+    )
+
+    this.sendBreaker.on('open', () => {
+      console.warn('[telegram-bot-service] Circuit breaker OPEN — Telegram API unavailable')
+    })
+    this.sendBreaker.on('halfOpen', () => {
+      console.info('[telegram-bot-service] Circuit breaker HALF-OPEN — testing Telegram API')
+    })
+    this.sendBreaker.on('close', () => {
+      console.info('[telegram-bot-service] Circuit breaker CLOSED — Telegram API recovered')
+    })
   }
 
   /**
@@ -53,9 +77,16 @@ export class TelegramBotService {
   }
 
   /**
-   * Send a text message to a Telegram chat.
+   * Send a text message to a Telegram chat (via circuit breaker).
    */
   async sendMessage(chatId: string | number, text: string): Promise<TelegramSendResult> {
+    return this.sendBreaker.fire(chatId, text) as Promise<TelegramSendResult>
+  }
+
+  /**
+   * Internal send — called through circuit breaker.
+   */
+  private async _sendMessage(chatId: string | number, text: string): Promise<TelegramSendResult> {
     const response = await fetch(`${this.apiBase}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -86,5 +117,12 @@ export class TelegramBotService {
   async getMe(): Promise<TelegramBotInfo> {
     const response = await fetch(`${this.apiBase}/getMe`)
     return response.json() as Promise<TelegramBotInfo>
+  }
+
+  /**
+   * Check if the circuit breaker is currently open (service degraded).
+   */
+  isCircuitOpen(): boolean {
+    return this.sendBreaker.opened
   }
 }

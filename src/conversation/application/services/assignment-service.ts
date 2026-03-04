@@ -68,11 +68,23 @@ export class AssignmentService {
   /**
    * Manually reassign a dialog to a specific operator.
    * Allows reassignment of both OPEN and ASSIGNED dialogs.
+   *
+   * SECURITY: Verifies the target operator belongs to the same tenant
+   * as the dialog to prevent cross-tenant assignment (FF-03).
    */
-  async reassign(dialogId: string, operatorId: string): Promise<Dialog | null> {
+  async reassign(dialogId: string, operatorId: string, tenantId: string): Promise<Dialog | null> {
     const dialog = await this.dialogRepo.findById(dialogId)
     if (!dialog) return null
     if (dialog.status !== 'OPEN' && dialog.status !== 'ASSIGNED') return null
+
+    // Cross-tenant guard: verify operator belongs to the same tenant
+    const { rows } = await this.pool.query(
+      'SELECT tenant_id FROM iam.operators WHERE id = $1',
+      [operatorId],
+    )
+    if (rows.length === 0 || rows[0].tenant_id !== tenantId) {
+      return null
+    }
 
     return this.dialogRepo.assignOperator(dialogId, operatorId)
   }

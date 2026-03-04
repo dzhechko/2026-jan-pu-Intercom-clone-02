@@ -17,7 +17,11 @@ import { TenantRequest } from '@shared/middleware/tenant.middleware'
  * Webhook route — mounted BEFORE auth middleware in server.ts.
  * VK Max sends POST requests here directly; no JWT required.
  */
-export function createVKMaxWebhookRouter(pool: Pool, io: SocketIOServer): Router {
+export function createVKMaxWebhookRouter(
+  pool: Pool,
+  io: SocketIOServer,
+  mcpService?: VKMaxMCPService | null,
+): Router {
   const router = Router()
 
   const handleWebhook: RequestHandler = async (req: Request, res: Response) => {
@@ -34,9 +38,8 @@ export function createVKMaxWebhookRouter(pool: Pool, io: SocketIOServer): Router
         return res.send(confirmationToken)
       }
 
-      const mcpService = VKMaxMCPService.fromEnv()
       if (!mcpService) {
-        console.error('[vkmax-routes] VKMAX_MCP_URL or VKMAX_ACCESS_TOKEN not configured')
+        console.error('[vkmax-routes] VKMaxMCPService not configured')
         return res.status(500).json({ error: 'VK Max MCP not configured' })
       }
 
@@ -68,13 +71,11 @@ export function createVKMaxWebhookRouter(pool: Pool, io: SocketIOServer): Router
  * Management routes — mounted under auth middleware.
  * Requires valid JWT (operator/admin).
  */
-export function createVKMaxManagementRouter(): Router {
+export function createVKMaxManagementRouter(
+  mcpService?: VKMaxMCPService | null,
+): Router {
   const router = Router()
 
-  /**
-   * POST /api/vkmax/setup
-   * Register the webhook URL with VK Max callback server.
-   */
   const setupWebhook: RequestHandler = async (req: Request, res: Response) => {
     try {
       const tenantReq = req as TenantRequest
@@ -84,12 +85,10 @@ export function createVKMaxManagementRouter(): Router {
         return res.status(400).json({ error: 'webhookUrl is required' })
       }
 
-      const mcpService = VKMaxMCPService.fromEnv()
       if (!mcpService) {
-        return res.status(500).json({ error: 'VKMAX_MCP_URL or VKMAX_ACCESS_TOKEN not configured' })
+        return res.status(500).json({ error: 'VKMaxMCPService not configured' })
       }
 
-      // Append tenantId as query param so the webhook knows which tenant this is for
       const url = new URL(webhookUrl)
       url.searchParams.set('tenantId', tenantReq.tenantId)
 
@@ -101,15 +100,10 @@ export function createVKMaxManagementRouter(): Router {
     }
   }
 
-  /**
-   * GET /api/vkmax/status
-   * Check VK Max MCP connection status.
-   */
   const getStatus: RequestHandler = async (_req: Request, res: Response) => {
     try {
-      const mcpService = VKMaxMCPService.fromEnv()
       if (!mcpService) {
-        return res.json({ connected: false, reason: 'VKMAX_MCP_URL or VKMAX_ACCESS_TOKEN not configured' })
+        return res.json({ connected: false, reason: 'VKMaxMCPService not configured' })
       }
 
       const info = await mcpService.getStatus()

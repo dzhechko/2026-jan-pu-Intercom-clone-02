@@ -69,6 +69,11 @@ function createMockPool(overrides?: {
         return { rows: overrides?.operatorLoad ?? [] }
       }
 
+      // Cross-tenant operator check (SELECT tenant_id FROM iam.operators WHERE id = $1)
+      if (q.includes('FROM iam.operators WHERE id =')) {
+        return { rows: [{ tenant_id: TENANT_ID }] }
+      }
+
       // findById (SELECT * FROM conversations.dialogs WHERE id = $1)
       if (q.includes('FROM conversations.dialogs WHERE id =')) {
         if (overrides?.findByIdDialog === null) return { rows: [] }
@@ -249,14 +254,14 @@ describe('AssignmentService', () => {
   // ── Reassignment ─────────────────────────────────────────────────────────
 
   describe('reassign()', () => {
-    it('reassigns an ASSIGNED dialog to a different operator', async () => {
+    it('reassigns an ASSIGNED dialog to a different operator in same tenant', async () => {
       const pool = createMockPool({
         findByIdDialog: makeDialogRow(DIALOG_1, 'ASSIGNED', OP_1),
       })
       const presence = createMockPresenceService([OP_1, OP_2])
       const service = new AssignmentService(pool, presence)
 
-      const result = await service.reassign(DIALOG_1, OP_2)
+      const result = await service.reassign(DIALOG_1, OP_2, TENANT_ID)
 
       expect(result).not.toBeNull()
       expect(result!.assignedOperatorId).toBe(OP_2)
@@ -269,7 +274,7 @@ describe('AssignmentService', () => {
       const presence = createMockPresenceService([OP_1])
       const service = new AssignmentService(pool, presence)
 
-      const result = await service.reassign(DIALOG_1, OP_1)
+      const result = await service.reassign(DIALOG_1, OP_1, TENANT_ID)
 
       expect(result).not.toBeNull()
     })
@@ -282,7 +287,7 @@ describe('AssignmentService', () => {
       const presence = createMockPresenceService([OP_1])
       const service = new AssignmentService(pool, presence)
 
-      const result = await service.reassign(DIALOG_1, OP_1)
+      const result = await service.reassign(DIALOG_1, OP_1, TENANT_ID)
 
       expect(result).toBeNull()
     })
@@ -292,7 +297,30 @@ describe('AssignmentService', () => {
       const presence = createMockPresenceService([OP_1])
       const service = new AssignmentService(pool, presence)
 
-      const result = await service.reassign('nonexistent', OP_1)
+      const result = await service.reassign('nonexistent', OP_1, TENANT_ID)
+
+      expect(result).toBeNull()
+    })
+
+    it('rejects cross-tenant operator assignment', async () => {
+      const pool = createMockPool({
+        findByIdDialog: makeDialogRow(DIALOG_1, 'OPEN'),
+      })
+      // Override the pool.query mock to return a different tenant for operator lookup
+      const originalQuery = pool.query as jest.Mock
+      const originalImpl = originalQuery.getMockImplementation()
+      originalQuery.mockImplementation(async (sql: string, params?: unknown[]) => {
+        // Intercept the operator tenant check query
+        if (typeof sql === 'string' && sql.includes('FROM iam.operators WHERE id =')) {
+          return { rows: [{ tenant_id: 'different-tenant-id' }] }
+        }
+        return originalImpl!(sql, params)
+      })
+
+      const presence = createMockPresenceService([OP_1])
+      const service = new AssignmentService(pool, presence)
+
+      const result = await service.reassign(DIALOG_1, OP_1, TENANT_ID)
 
       expect(result).toBeNull()
     })
