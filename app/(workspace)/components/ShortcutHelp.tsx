@@ -16,6 +16,7 @@ const CATEGORIES: { key: ShortcutDef['category']; label: string }[] = [
 
 export function ShortcutHelp({ open, onClose }: ShortcutHelpProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
 
   // Close on Escape
   useEffect(() => {
@@ -30,6 +31,12 @@ export function ShortcutHelp({ open, onClose }: ShortcutHelpProps) {
     return () => document.removeEventListener('keydown', handler, true)
   }, [open, onClose])
 
+  // Auto-focus close button and trap focus inside modal
+  useEffect(() => {
+    if (!open) return
+    closeRef.current?.focus()
+  }, [open])
+
   if (!open) return null
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -42,15 +49,25 @@ export function ShortcutHelp({ open, onClose }: ShortcutHelpProps) {
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shortcut-help-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       data-testid="shortcut-help-overlay"
     >
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">Keyboard Shortcuts</h2>
+          <h2 id="shortcut-help-title" className="text-base font-semibold text-gray-900">Keyboard Shortcuts</h2>
           <button
+            ref={closeRef}
             onClick={onClose}
+            onKeyDown={(e) => {
+              if (e.key === 'Tab') {
+                e.preventDefault()
+                closeRef.current?.focus()
+              }
+            }}
             className="text-gray-400 hover:text-gray-600 transition-colors text-lg"
             data-testid="shortcut-help-close"
             aria-label="Close"

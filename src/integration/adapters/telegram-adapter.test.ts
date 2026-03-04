@@ -369,6 +369,7 @@ describe('TelegramBotService', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         'https://api.telegram.org/bottest-token-123/getMe',
+        undefined,
       )
       expect(result.ok).toBe(true)
       expect(result.result?.username).toBe('test_bot')

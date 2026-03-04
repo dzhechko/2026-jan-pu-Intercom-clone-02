@@ -5,31 +5,7 @@
  */
 
 import { QUICK_REPLY_TEMPLATES } from '../../app/(workspace)/constants/quickReplies'
-
-// Helper: simulate shortcut map structure (mirrors useKeyboardShortcuts)
-interface ShortcutDef {
-  key: string
-  label: string
-  description: string
-  category: 'navigation' | 'messaging' | 'actions'
-}
-
-const SHORTCUT_MAP: ShortcutDef[] = [
-  { key: 'Ctrl+K', label: 'Ctrl+K', description: 'Focus search/filter dialogs', category: 'navigation' },
-  { key: 'Alt+ArrowUp', label: 'Alt+\u2191', description: 'Previous dialog', category: 'navigation' },
-  { key: 'Alt+ArrowDown', label: 'Alt+\u2193', description: 'Next dialog', category: 'navigation' },
-  { key: 'Alt+N', label: 'Alt+N', description: 'Jump to next unassigned dialog', category: 'navigation' },
-  { key: 'Escape', label: 'Esc', description: 'Deselect dialog / close panels', category: 'navigation' },
-  { key: 'Ctrl+Enter', label: 'Ctrl+Enter', description: 'Send message', category: 'messaging' },
-  { key: 'Alt+1', label: 'Alt+1', description: 'Quick reply #1', category: 'messaging' },
-  { key: 'Alt+2', label: 'Alt+2', description: 'Quick reply #2', category: 'messaging' },
-  { key: 'Alt+3', label: 'Alt+3', description: 'Quick reply #3', category: 'messaging' },
-  { key: 'Alt+4', label: 'Alt+4', description: 'Quick reply #4', category: 'messaging' },
-  { key: 'Alt+5', label: 'Alt+5', description: 'Quick reply #5', category: 'messaging' },
-  { key: 'Alt+A', label: 'Alt+A', description: 'Assign dialog to me', category: 'actions' },
-  { key: 'Alt+C', label: 'Alt+C', description: 'Close current dialog', category: 'actions' },
-  { key: '?', label: '?', description: 'Show keyboard shortcuts help', category: 'actions' },
-]
+import { SHORTCUT_MAP } from '../../app/(workspace)/hooks/useKeyboardShortcuts'
 
 describe('FR-14: Keyboard Shortcuts', () => {
   describe('shortcut registration', () => {
@@ -104,7 +80,10 @@ describe('FR-14: Keyboard Shortcuts', () => {
   })
 
   describe('input field exclusion logic', () => {
-    // Simulates the isTypingInInput() check from the hook
+    // NOTE: This re-implements the same logic as the non-exported isTypingInInput()
+    // function in useKeyboardShortcuts.ts. If the source logic changes, this local
+    // copy must be updated manually. The source function relies on document.activeElement
+    // and cannot be easily tested in isolation without DOM mocking.
     function isTypingInInput(tagName: string, isContentEditable = false): boolean {
       const tag = tagName.toLowerCase()
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
@@ -220,14 +199,14 @@ describe('FR-14: Keyboard Shortcuts', () => {
     it('Alt+1 should map to the first quick reply template', () => {
       const index = 1 - 1 // Alt+1 -> index 0
       expect(QUICK_REPLY_TEMPLATES[index].content).toBe(
-        'Спасибо за обращение! Подключаю специалиста.',
+        '\u0421\u043f\u0430\u0441\u0438\u0431\u043e \u0437\u0430 \u043e\u0431\u0440\u0430\u0449\u0435\u043d\u0438\u0435! \u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0430\u044e \u0441\u043f\u0435\u0446\u0438\u0430\u043b\u0438\u0441\u0442\u0430.',
       )
     })
 
     it('Alt+5 should map to the last quick reply template', () => {
       const index = 5 - 1 // Alt+5 -> index 4
       expect(QUICK_REPLY_TEMPLATES[index].content).toBe(
-        'Передаю ваш запрос в отдел продаж.',
+        '\u041f\u0435\u0440\u0435\u0434\u0430\u044e \u0432\u0430\u0448 \u0437\u0430\u043f\u0440\u043e\u0441 \u0432 \u043e\u0442\u0434\u0435\u043b \u043f\u0440\u043e\u0434\u0430\u0436.',
       )
     })
 

@@ -41,6 +41,7 @@ const CIRCUIT_BREAKER_OPTIONS = {
 
 export class VKMaxMCPService {
   private readonly sendBreaker: CircuitBreaker
+  private readonly adminBreaker: CircuitBreaker
 
   constructor(
     private readonly mcpUrl: string,
@@ -49,6 +50,15 @@ export class VKMaxMCPService {
     // Wrap sendMessage in circuit breaker
     this.sendBreaker = new CircuitBreaker(
       this._sendMessage.bind(this),
+      CIRCUIT_BREAKER_OPTIONS,
+    )
+
+    // Wrap admin operations (setWebhook, getStatus) in circuit breaker
+    this.adminBreaker = new CircuitBreaker(
+      async (url: string, options?: RequestInit) => {
+        const response = await fetch(url, options)
+        return response.json()
+      },
       CIRCUIT_BREAKER_OPTIONS,
     )
 
@@ -62,6 +72,18 @@ export class VKMaxMCPService {
 
     this.sendBreaker.on('close', () => {
       console.info('[vkmax-mcp-service] Circuit breaker CLOSED — VK Max API recovered')
+    })
+
+    this.adminBreaker.on('open', () => {
+      console.warn('[vkmax-mcp-service] Admin circuit breaker OPEN — VK Max API unavailable')
+    })
+
+    this.adminBreaker.on('halfOpen', () => {
+      console.info('[vkmax-mcp-service] Admin circuit breaker HALF-OPEN — testing VK Max API')
+    })
+
+    this.adminBreaker.on('close', () => {
+      console.info('[vkmax-mcp-service] Admin circuit breaker CLOSED — VK Max API recovered')
     })
   }
 
@@ -109,7 +131,7 @@ export class VKMaxMCPService {
   }
 
   /**
-   * Register a webhook (callback server) URL with VK Max.
+   * Register a webhook (callback server) URL with VK Max (via admin circuit breaker).
    * TODO: Replace mock with real MCP API call.
    */
   async setWebhook(url: string): Promise<VKMaxWebhookResult> {
@@ -118,19 +140,18 @@ export class VKMaxMCPService {
       return { ok: true, result: true }
     }
 
-    const response = await fetch(`${this.mcpUrl}/groups.setCallbackServer`, {
+    return this.adminBreaker.fire(`${this.mcpUrl}/groups.setCallbackServer`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${this.accessToken}`,
       },
       body: JSON.stringify({ url }),
-    })
-    return response.json() as Promise<VKMaxWebhookResult>
+    }) as Promise<VKMaxWebhookResult>
   }
 
   /**
-   * Check connection status / bot info.
+   * Check connection status / bot info (via admin circuit breaker).
    * TODO: Replace mock with real MCP API call.
    */
   async getStatus(): Promise<VKMaxBotInfo> {
@@ -141,13 +162,12 @@ export class VKMaxMCPService {
       }
     }
 
-    const response = await fetch(`${this.mcpUrl}/groups.getById`, {
+    return this.adminBreaker.fire(`${this.mcpUrl}/groups.getById`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
       },
-    })
-    return response.json() as Promise<VKMaxBotInfo>
+    }) as Promise<VKMaxBotInfo>
   }
 
   /**

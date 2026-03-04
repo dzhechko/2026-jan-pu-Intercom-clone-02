@@ -47,12 +47,21 @@ export interface TelegramWebhookResult {
 export class TelegramBotService {
   private readonly apiBase: string
   private readonly sendBreaker: CircuitBreaker
+  private readonly adminBreaker: CircuitBreaker
 
   constructor(private readonly botToken: string) {
     this.apiBase = `${TELEGRAM_API_BASE}/bot${botToken}`
 
     this.sendBreaker = new CircuitBreaker(
       this._sendMessage.bind(this),
+      CIRCUIT_BREAKER_OPTIONS,
+    )
+
+    this.adminBreaker = new CircuitBreaker(
+      async (url: string, options?: RequestInit) => {
+        const response = await fetch(url, options)
+        return response.json()
+      },
       CIRCUIT_BREAKER_OPTIONS,
     )
 
@@ -64,6 +73,16 @@ export class TelegramBotService {
     })
     this.sendBreaker.on('close', () => {
       console.info('[telegram-bot-service] Circuit breaker CLOSED — Telegram API recovered')
+    })
+
+    this.adminBreaker.on('open', () => {
+      console.warn('[telegram-bot-service] Admin circuit breaker OPEN — Telegram API unavailable')
+    })
+    this.adminBreaker.on('halfOpen', () => {
+      console.info('[telegram-bot-service] Admin circuit breaker HALF-OPEN — testing Telegram API')
+    })
+    this.adminBreaker.on('close', () => {
+      console.info('[telegram-bot-service] Admin circuit breaker CLOSED — Telegram API recovered')
     })
   }
 
@@ -100,23 +119,21 @@ export class TelegramBotService {
   }
 
   /**
-   * Register a webhook URL with Telegram Bot API.
+   * Register a webhook URL with Telegram Bot API (via admin circuit breaker).
    */
   async setWebhook(url: string): Promise<TelegramWebhookResult> {
-    const response = await fetch(`${this.apiBase}/setWebhook`, {
+    return this.adminBreaker.fire(`${this.apiBase}/setWebhook`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
-    })
-    return response.json() as Promise<TelegramWebhookResult>
+    }) as Promise<TelegramWebhookResult>
   }
 
   /**
-   * Verify bot connection — returns bot info.
+   * Verify bot connection — returns bot info (via admin circuit breaker).
    */
   async getMe(): Promise<TelegramBotInfo> {
-    const response = await fetch(`${this.apiBase}/getMe`)
-    return response.json() as Promise<TelegramBotInfo>
+    return this.adminBreaker.fire(`${this.apiBase}/getMe`) as Promise<TelegramBotInfo>
   }
 
   /**
