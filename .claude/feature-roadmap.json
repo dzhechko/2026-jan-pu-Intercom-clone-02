@@ -128,7 +128,7 @@
       "description": "After 1K dialogs — retrain on real data. Accuracy >= 75%.",
       "priority": "should",
       "milestone": "M3",
-      "status": "next",
+      "status": "done",
       "bc": ["pql"],
       "depends_on": ["FR-01", "FR-02"]
     },
