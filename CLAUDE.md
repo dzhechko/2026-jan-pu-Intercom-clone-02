@@ -223,8 +223,20 @@ Command hierarchy:
 Insights are automatically captured during development. Use `/myinsights` to view and manage.
 Insight files: `docs/insights/index.md` (summary) + `docs/insights/detail/` (individual).
 
-## Feature Lifecycle
+## Feature Development Lifecycle
 
-Every feature follows: **Plan → Validate → Implement → Review**
-Use `/feature [name]` to start the full lifecycle.
-Skills used: explore → sparc-prd-mini → requirements-validator → brutal-honesty-review
+New features use the 4-phase lifecycle: `/feature [name]`
+1. **PLAN** — sparc-prd-mini (with Gate + external skills) → `docs/features/<name>/sparc/`
+2. **VALIDATE** — requirements-validator swarm → score >=70
+3. **IMPLEMENT** — parallel agents from validated docs
+4. **REVIEW** — brutal-honesty-review swarm → fix all criticals
+
+Available lifecycle skills in `.claude/skills/`:
+- `sparc-prd-mini` (orchestrator, delegates to explore, goap-research, problem-solver-enhanced)
+- `explore` (Socratic questioning → Product Brief)
+- `goap-research-ed25519` (GOAP A* + OODA → Research Findings)
+- `problem-solver-enhanced` (9 modules + TRIZ → Solution Strategy)
+- `requirements-validator`
+- `brutal-honesty-review`
+
+Feature docs output: `docs/features/<feature-name>/sparc/` (SPARC docs) + `docs/features/<feature-name>/review-report.md`

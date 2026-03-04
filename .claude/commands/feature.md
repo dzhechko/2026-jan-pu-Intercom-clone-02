@@ -1,94 +1,154 @@
-# /feature $ARGUMENTS — Feature Lifecycle
+# /feature $ARGUMENTS
 
-## Role
-Orchestrate full feature development lifecycle: Plan → Validate → Implement → Review.
+## Overview
 
-## Input
-`$ARGUMENTS` — feature name/description (e.g., "PQL Detection v1", "Telegram channel")
+Four-phase feature development lifecycle with quality gates between each phase.
+All documentation goes to `docs/features/<feature-name>/sparc/`.
 
-## Phase 1: Plan
+## Phase 0: PRE-FLIGHT CHECK
 
-1. Read relevant docs:
-   - `docs/PRD.md` — find matching FR/US
-   - `docs/pseudocode.md` — find algorithm if applicable
-   - `docs/bounded-contexts.md` — identify which BC owns this feature
-   - `docs/tactical-design.md` — DB schema for the feature
+Before starting, verify all required skills exist:
 
-2. Use `explore` skill (`.claude/skills/explore/SKILL.md`) if requirements unclear
+- ✅ `sparc-prd-mini/SKILL.md` — ABORT if missing (core orchestrator)
+- ⚠️ `explore/SKILL.md` — fallback: built-in Socratic questions (degraded)
+- ⚠️ `goap-research-ed25519/SKILL.md` — fallback: direct web_search (degraded)
+- ⚠️ `problem-solver-enhanced/SKILL.md` — fallback: First Principles + SCQA only (degraded)
+- ✅ `requirements-validator/SKILL.md` — ABORT if missing (Phase 2 blocker)
+- ✅ `brutal-honesty-review/SKILL.md` — ABORT if missing (Phase 4 blocker)
 
-3. Create implementation plan:
-   - Files to create/modify
-   - Dependencies on other features
-   - Estimated complexity
-   - Test strategy
+If any ✅ skill is missing → stop and inform user to re-run toolkit generator.
+If any ⚠️ skill is missing → warn user about degraded quality, continue.
 
-4. Save plan to `docs/plans/{feature-name}.md`
+## Phase 1: PLAN (sparc-prd-mini)
 
-## Phase 2: Validate
+**Goal:** Research, analyze, and create full SPARC documentation for the feature.
 
-1. Use `requirements-validator` skill (`.claude/skills/requirements-validator/SKILL.md`)
-   - Check INVEST criteria for user stories
-   - Verify acceptance criteria are testable
-   - Generate BDD scenarios if missing
+1. Read the sparc-prd-mini skill from `.claude/skills/sparc-prd-mini/SKILL.md`
+2. Create feature directory: `docs/features/<feature-name>/sparc/`
+3. Run sparc-prd-mini Gate to assess task clarity (skip Explore if clear)
+4. Apply sparc-prd-mini MANUAL mode to the feature
+5. sparc-prd-mini delegates to external skills via view():
+   - explore → Socratic questioning → Product Brief
+   - goap-research → GOAP A* + OODA → Research Findings
+   - problem-solver-enhanced → 9 modules + TRIZ → Solution Strategy
+6. Output all SPARC documents into the feature directory:
+   - PRD.md, Solution_Strategy.md, Specification.md
+   - Pseudocode.md, Architecture.md, Refinement.md
+   - Completion.md, Research_Findings.md, Final_Summary.md
+   - Note: CLAUDE.md is NOT generated per-feature (project-level CLAUDE.md already exists)
+7. Also save implementation plan to `docs/plans/{feature-id}-{feature-name}.md`
+8. Git commit: `docs(feature): SPARC planning for <feature-name>`
 
-2. Gate: score ≥ 50 to proceed
+**⏸️ Checkpoint:** Show SPARC summary, ask to proceed to validation.
 
-## Phase 3: Implement
+## Phase 2: VALIDATE (requirements-validator, swarm)
 
-1. Follow the plan from Phase 1
-2. Reference pseudocode from `docs/pseudocode.md`
-3. Respect architectural constraints:
-   - No cross-BC imports (FF-02)
-   - Circuit Breaker on MCP adapters (FF-04)
-   - RLS on all queries (FF-03)
-   - Domain types only in domain layer
-4. Write tests alongside code
-5. Use parallel Task execution where possible
+**Goal:** Validate SPARC documentation quality using swarm of validation agents.
 
-## Phase 4: Review
+1. Read the requirements-validator skill from `.claude/skills/requirements-validator/SKILL.md`
+2. Use swarm of agents to validate:
 
-1. Use `brutal-honesty-review` skill (`.claude/skills/brutal-honesty-review/SKILL.md`)
-2. Check against Fitness Functions from `docs/fitness-functions.md`
-3. Run tests: `npm test`
-4. Verify no cross-BC imports
+| Agent | Scope | Target |
+|-------|-------|--------|
+| validator-stories | User Stories from Specification.md | INVEST criteria, score ≥70 |
+| validator-acceptance | Acceptance Criteria | SMART criteria, testability |
+| validator-architecture | Architecture.md | Consistency with project Architecture |
+| validator-pseudocode | Pseudocode.md | Completeness, implementability |
+| validator-coherence | All SPARC files | Cross-reference consistency |
 
-## Phase 5: Document (MANDATORY)
+3. **Iterative loop (max 3 iterations):**
+   - Run all validators in parallel (Agent tool)
+   - Aggregate gaps and blocked items
+   - Fix gaps in SPARC documents
+   - Re-validate
+   - Repeat until: no BLOCKED items, average score ≥70
 
-1. **MUST** create feature documentation in `docs/features/{feature-id}-{feature-name}.md`
-2. This is the FINAL documentation — not a plan, but a record of what was built
-3. Template:
+4. Save validation report: `docs/features/<feature-name>/sparc/validation-report.md`
+5. Git commit: `docs(feature): validation complete for <feature-name>`
 
-```markdown
-# {Feature ID}: {Feature Name}
-**Status:** Done | **BC:** {bounded contexts} | **Priority:** {priority} | **Milestone:** {milestone}
+**⏸️ Checkpoint:** Show validation results, ask to proceed to implementation.
 
-## Summary
-{2-3 sentences describing what was implemented}
+## Phase 3: IMPLEMENT (swarm + parallel tasks)
 
-## Files Created/Modified
-{Table: File | Role}
+**Goal:** Implement the feature using validated SPARC documents as source of truth.
 
-## API Endpoints (if applicable)
-{Table: Method | Path | Description}
+1. Read ALL documents from `docs/features/<feature-name>/sparc/`
+2. Use swarm of agents and specialized skills to deliver:
+   - `@planner` — break down into tasks from Pseudocode.md
+   - `@architect` — ensure consistency with Architecture.md
+   - Implementation agents — parallel Agent tool for independent modules
+3. **Make implementation modular** for reuse in other cases and applications
+4. Save frequent commits to GitHub
+5. Spawn concurrent tasks to speed up development
 
-## Socket.io Events (if applicable)
-{Table: Event | Direction | Payload}
+**Implementation rules:**
+- Each module gets its own Agent for parallel execution
+- Reference SPARC docs, don't hallucinate code
+- Commit after each logical unit: `feat(<bc>): <what>`
+- Run tests in parallel with implementation
+- Respect architectural constraints:
+  - No cross-BC imports (FF-02)
+  - Circuit Breaker on MCP adapters (FF-04)
+  - RLS on all queries (FF-03)
+  - Domain types only in domain layer
 
-## Key Decisions
-{Numbered list of important implementation decisions}
+**⏸️ Checkpoint:** Show implementation summary, ask to proceed to review.
 
-## Tests
-{List of test files with test count and what they cover}
+## Phase 4: REVIEW (brutal-honesty-review, swarm)
 
-## Acceptance Criteria
-{Checklist with [x] for verified criteria}
+**Goal:** Rigorous post-implementation review and improvement.
+
+1. Read the brutal-honesty-review skill from `.claude/skills/brutal-honesty-review/SKILL.md`
+2. Use swarm of agents for review:
+
+| Agent | Scope | Focus |
+|-------|-------|-------|
+| code-quality | Source code | Clean code, patterns, naming |
+| architecture | Integration | Consistency with project architecture |
+| security | Security surface | Vulnerabilities, input validation |
+| performance | Hot paths | Bottlenecks, complexity |
+| testing | Test coverage | Edge cases, missing tests |
+
+3. Process:
+   - Run brutal-honesty-review on implementation
+   - Fix identified issues (use Agent tool for parallel fixes)
+   - Save frequent commits: `fix(<bc>): <what>`
+   - Benchmark after implementation
+   - Re-review critical findings until clean
+
+4. Save review report: `docs/features/<feature-name>/review-report.md`
+5. Git commit: `docs(feature): review complete for <feature-name>`
+
+## Completion
+
+After all 4 phases:
+
 ```
+✅ Feature: <feature-name>
+📁 docs/features/<feature-name>/
+   ├── sparc/                  # SPARC documentation
+   │   ├── PRD.md
+   │   ├── Specification.md
+   │   ├── Architecture.md
+   │   ├── Pseudocode.md
+   │   ├── Solution_Strategy.md
+   │   ├── Refinement.md
+   │   ├── Completion.md
+   │   ├── Research_Findings.md
+   │   ├── Final_Summary.md
+   │   └── validation-report.md
+   └── review-report.md       # Brutal honesty review
 
-4. This file MUST be committed alongside the feature code
+📊 Validation: score XX/100
+🔍 Review: X issues found → X fixed
+💾 Commits: N commits
+```
 
 ## Git
 ```
-feat({bc}): add {feature-name}
+docs(feature): SPARC planning for <feature-name>
+docs(feature): validation complete for <feature-name>
+feat({bc}): implement <feature-name>
+fix({bc}): <fixes from review>
+docs(feature): review complete for <feature-name>
 ```
-
-Commit after each meaningful milestone, not after every file change.
