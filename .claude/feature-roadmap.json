@@ -18,7 +18,7 @@
       "description": "JS widget for embedding on client sites. Web chat support. Client branding.",
       "priority": "must",
       "milestone": "M1",
-      "status": "next",
+      "status": "done",
       "bc": ["conversation"],
       "depends_on": []
     },
@@ -28,7 +28,7 @@
       "description": "Multi-tenant IAM with JWT auth, PostgreSQL RLS policies, operator roles.",
       "priority": "must",
       "milestone": "M1",
-      "status": "next",
+      "status": "done",
       "bc": ["iam"],
       "depends_on": []
     },
@@ -38,7 +38,7 @@
       "description": "Unified inbox: queue + sidebar (Memory AI) + PQL panel + quick replies.",
       "priority": "must",
       "milestone": "M1",
-      "status": "planned",
+      "status": "done",
       "bc": ["conversation", "pql"],
       "depends_on": ["FR-04", "IAM-01"]
     },
@@ -48,7 +48,7 @@
       "description": "Operator sees fire-emoji label + explanation 'Why lead' in sidebar. Click-through to CRM card.",
       "priority": "must",
       "milestone": "M1",
-      "status": "planned",
+      "status": "next",
       "bc": ["pql", "conversation"],
       "depends_on": ["FR-01", "FR-07"]
     },
@@ -58,7 +58,7 @@
       "description": "Auto-load from amoCRM before operator responds: deals, contacts, history. Via amoCRM MCP.",
       "priority": "must",
       "milestone": "M1",
-      "status": "planned",
+      "status": "next",
       "bc": ["pql", "integration"],
       "depends_on": ["FR-07"]
     },
@@ -68,7 +68,7 @@
       "description": "Incoming via Telegram Business/Bot API. Unified queue with web chat.",
       "priority": "must",
       "milestone": "M1",
-      "status": "planned",
+      "status": "next",
       "bc": ["conversation", "integration"],
       "depends_on": ["FR-07"]
     },
