@@ -78,7 +78,7 @@
       "description": "Push/email to operator on every new hot lead (real-time).",
       "priority": "should",
       "milestone": "M1",
-      "status": "next",
+      "status": "done",
       "bc": ["notifications"],
       "depends_on": ["FR-02"]
     },
