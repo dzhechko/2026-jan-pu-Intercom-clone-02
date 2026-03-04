@@ -77,9 +77,10 @@ export class OperatorRepository {
     }
   }
 
-  async findById(id: string): Promise<Result<Operator | null, Error>> {
+  async findById(id: string, client?: PoolClient): Promise<Result<Operator | null, Error>> {
     try {
-      const result = await this.pool.query(
+      const executor = client ?? this.pool
+      const result = await executor.query(
         'SELECT * FROM iam.operators WHERE id = $1',
         [id],
       )
@@ -89,9 +90,10 @@ export class OperatorRepository {
     }
   }
 
-  async findByTenantId(tenantId: string): Promise<Result<Operator[], Error>> {
+  async findByTenantId(tenantId: string, client?: PoolClient): Promise<Result<Operator[], Error>> {
     try {
-      const result = await this.pool.query(
+      const executor = client ?? this.pool
+      const result = await executor.query(
         'SELECT * FROM iam.operators WHERE tenant_id = $1 ORDER BY created_at ASC',
         [tenantId],
       )

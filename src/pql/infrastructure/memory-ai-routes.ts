@@ -56,10 +56,11 @@ export function createMemoryAIRouter(pool: Pool, memoryAIService: MemoryAIServic
     }
 
     try {
-      // Look up dialog to get contactEmail
-      const { rows } = await pool.query(
-        'SELECT contact_email FROM conversations.dialogs WHERE id = $1 AND tenant_id = $2',
-        [dialogId, tenantId],
+      // Look up dialog to get contactEmail — use tenant-scoped client for RLS (ADR-007)
+      const tenantReq = req as unknown as TenantRequest
+      const { rows } = await tenantReq.dbClient.query(
+        'SELECT contact_email FROM conversations.dialogs WHERE id = $1',
+        [dialogId],
       )
 
       if (rows.length === 0) {

@@ -61,10 +61,34 @@ const TypingSchema = z.object({
 
 // ─── Handler factory ─────────────────────────────────────────────────────────
 
+// Rate limiting map: externalChannelId → { count, resetAt }
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT_MAX = 10  // messages per window (SH-03)
+const RATE_LIMIT_WINDOW_MS = 60_000  // 1 minute
+
+function checkRateLimit(key: string): boolean {
+  const now = Date.now()
+  const entry = rateLimitMap.get(key)
+  if (!entry || now >= entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return true
+  }
+  entry.count++
+  return entry.count <= RATE_LIMIT_MAX
+}
+
+/**
+ * Acquire a dedicated pool client with RLS context set for the given tenant.
+ * Caller MUST release the client when done.
+ */
+async function acquireTenantClient(pool: Pool, tenantId: string) {
+  const client = await pool.connect()
+  await client.query('SELECT set_config($1, $2, false)', ['app.tenant_id', tenantId])
+  return client
+}
+
 export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetector?: PQLDetectorService, notificationService?: NotificationService): Namespace {
   const nsp: Namespace = io.of('/chat')
-  const dialogRepo = new DialogRepository(pool)
-  const messageRepo = new MessageRepository(pool)
 
   nsp.on('connection', (socket: Socket) => {
     const { tenantId, operatorId, dialogId } = socket.handshake.auth as {
@@ -94,9 +118,16 @@ export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetecto
 
       const { tenantId, content, externalChannelId, contactEmail, metadata } = parsed.data
 
+      // SH-03: Rate limit widget messages (10 msg/min per session)
+      if (!checkRateLimit(externalChannelId)) {
+        socket.emit('error', { code: 'RATE_LIMITED', message: 'Too many messages. Please wait.' })
+        return
+      }
+
+      const client = await acquireTenantClient(pool, tenantId)
       try {
-        // Set RLS context for this ad-hoc operation
-        await pool.query(`SET LOCAL app.tenant_id = '${tenantId}'`)
+        const dialogRepo = new DialogRepository(pool)
+        const messageRepo = new MessageRepository(pool)
 
         // Find or create dialog for this widget session
         let dialog = await dialogRepo.findByExternalId(tenantId, externalChannelId)
@@ -145,6 +176,8 @@ export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetecto
       } catch (err) {
         console.error('[ws-handler] client:message error', err)
         socket.emit('error', { code: 'INTERNAL_ERROR' })
+      } finally {
+        client.release()
       }
     })
 
@@ -158,8 +191,10 @@ export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetecto
 
       const { dialogId, tenantId, content } = parsed.data
 
+      const client = await acquireTenantClient(pool, tenantId)
       try {
-        await pool.query(`SET LOCAL app.tenant_id = '${tenantId}'`)
+        const dialogRepo = new DialogRepository(pool)
+        const messageRepo = new MessageRepository(pool)
 
         const dialog = await dialogRepo.findById(dialogId)
         if (!dialog) {
@@ -193,6 +228,8 @@ export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetecto
       } catch (err) {
         console.error('[ws-handler] operator:message error', err)
         socket.emit('error', { code: 'INTERNAL_ERROR' })
+      } finally {
+        client.release()
       }
     })
 
@@ -206,9 +243,9 @@ export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetecto
 
       const { dialogId, tenantId, operatorId } = parsed.data
 
+      const client = await acquireTenantClient(pool, tenantId)
       try {
-        await pool.query(`SET LOCAL app.tenant_id = '${tenantId}'`)
-
+        const dialogRepo = new DialogRepository(pool)
         const dialog = await dialogRepo.assignOperator(dialogId, operatorId)
         if (!dialog) {
           socket.emit('error', { code: 'DIALOG_NOT_FOUND' })
@@ -221,6 +258,8 @@ export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetecto
       } catch (err) {
         console.error('[ws-handler] dialog:assign error', err)
         socket.emit('error', { code: 'INTERNAL_ERROR' })
+      } finally {
+        client.release()
       }
     })
 

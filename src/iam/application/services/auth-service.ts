@@ -19,14 +19,10 @@ import { OperatorRepository } from '@iam/infrastructure/repositories/operator-re
 import { Tenant } from '@iam/domain/aggregates/tenant'
 import { Operator, JwtPayload } from '@iam/domain/aggregates/operator'
 import { Result, ok, err } from '@shared/types/result'
+import { getJwtSecret } from '@shared/utils/jwt-secret'
 
 const BCRYPT_ROUNDS = 12
 const TOKEN_EXPIRES_IN = '24h'
-
-/** Read JWT_SECRET at call time so tests can set process.env.JWT_SECRET in beforeEach. */
-function getJwtSecret(): string {
-  return process.env.JWT_SECRET ?? 'dev-secret-change-me'
-}
 
 // ── Input validation schemas ──────────────────────────────────────────────────
 

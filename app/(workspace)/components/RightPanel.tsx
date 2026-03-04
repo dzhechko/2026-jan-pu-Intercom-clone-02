@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Dialog, PQLTier, QuickReply } from '../types'
 import { useMemoryAI, type CRMContactContextUI, type MemoryAIStatus } from '../hooks/useMemoryAI'
+import { QUICK_REPLY_TEMPLATES } from '../constants/quickReplies'
 
 interface PQLSignal {
   ruleId: string
@@ -23,13 +24,8 @@ interface PQLDetectionResponse {
   }>
 }
 
-const DEFAULT_QUICK_REPLIES: QuickReply[] = [
-  { id: 'qr-1', label: 'Greeting', content: 'Hello! How can I help you today?' },
-  { id: 'qr-2', label: 'Pricing', content: 'I would be happy to help with pricing information. Let me check what plan suits your needs.' },
-  { id: 'qr-3', label: 'Follow up', content: 'Thank you for reaching out! Is there anything else I can help with?' },
-  { id: 'qr-4', label: 'Transfer', content: 'Let me transfer you to a specialist who can better assist you with this.' },
-  { id: 'qr-5', label: 'Closing', content: 'Thank you for chatting with us! Feel free to reach out anytime.' },
-]
+// Use Russian quick reply templates from shared constants (FR-14)
+const DEFAULT_QUICK_REPLIES = QUICK_REPLY_TEMPLATES
 
 function pqlTierDisplay(tier?: PQLTier) {
   if (!tier) return { label: 'N/A', color: 'text-gray-400', bg: 'bg-gray-50' }
@@ -464,7 +460,7 @@ function MemoryAIDisplay({ data }: { data: CRMContactContextUI }) {
                 </div>
                 <div className="flex items-center gap-2 ml-2 shrink-0">
                   <span className="text-gray-600 font-medium">
-                    ${deal.value.toLocaleString()}
+                    {deal.value.toLocaleString()} ₽
                   </span>
                   <span
                     className={`text-[10px] font-semibold px-1 rounded ${

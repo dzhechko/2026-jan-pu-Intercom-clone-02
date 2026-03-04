@@ -28,7 +28,7 @@ export function createOperatorRouter(pool: Pool, redis: Redis): Router {
   const listOperators: RequestHandler = async (req, res) => {
     try {
       const tenantReq = req as TenantRequest
-      const result = await operatorRepo.findByTenantId(tenantReq.tenantId)
+      const result = await operatorRepo.findByTenantId(tenantReq.tenantId, tenantReq.dbClient)
 
       if (!result.ok) {
         return res.status(500).json({ error: 'Failed to fetch operators' })
@@ -59,7 +59,7 @@ export function createOperatorRouter(pool: Pool, redis: Redis): Router {
       const onlineIds = await presenceService.getOnlineOperators(tenantReq.tenantId)
 
       // Fetch full operator details for online operators
-      const result = await operatorRepo.findByTenantId(tenantReq.tenantId)
+      const result = await operatorRepo.findByTenantId(tenantReq.tenantId, tenantReq.dbClient)
       if (!result.ok) {
         return res.status(500).json({ error: 'Failed to fetch operators' })
       }
@@ -98,7 +98,7 @@ export function createOperatorRouter(pool: Pool, redis: Redis): Router {
         return res.status(400).json({ error: 'Invalid body', details: parsed.error.flatten() })
       }
 
-      const operatorResult = await operatorRepo.findById(req.params.id)
+      const operatorResult = await operatorRepo.findById(req.params.id, tenantReq.dbClient)
       if (!operatorResult.ok) {
         return res.status(500).json({ error: 'Failed to fetch operator' })
       }
@@ -116,7 +116,7 @@ export function createOperatorRouter(pool: Pool, redis: Redis): Router {
         return res.status(400).json({ error: 'Cannot change your own role' })
       }
 
-      await pool.query(
+      await tenantReq.dbClient.query(
         'UPDATE iam.operators SET role = $1 WHERE id = $2',
         [parsed.data.role, req.params.id],
       )
@@ -148,7 +148,7 @@ export function createOperatorRouter(pool: Pool, redis: Redis): Router {
         return res.status(400).json({ error: 'Cannot deactivate yourself' })
       }
 
-      const operatorResult = await operatorRepo.findById(req.params.id)
+      const operatorResult = await operatorRepo.findById(req.params.id, tenantReq.dbClient)
       if (!operatorResult.ok) {
         return res.status(500).json({ error: 'Failed to fetch operator' })
       }
@@ -161,7 +161,7 @@ export function createOperatorRouter(pool: Pool, redis: Redis): Router {
         return res.status(404).json({ error: 'Operator not found' })
       }
 
-      const result = await operatorRepo.updateStatus(req.params.id, 'DISABLED')
+      const result = await operatorRepo.updateStatus(req.params.id, 'DISABLED', tenantReq.dbClient)
       if (!result.ok) {
         return res.status(500).json({ error: 'Failed to deactivate operator' })
       }
@@ -184,7 +184,7 @@ export function createOperatorRouter(pool: Pool, redis: Redis): Router {
     try {
       const tenantReq = req as TenantRequest
 
-      const operatorResult = await operatorRepo.findById(req.params.id)
+      const operatorResult = await operatorRepo.findById(req.params.id, tenantReq.dbClient)
       if (!operatorResult.ok || !operatorResult.value) {
         return res.status(404).json({ error: 'Operator not found' })
       }
@@ -192,15 +192,15 @@ export function createOperatorRouter(pool: Pool, redis: Redis): Router {
         return res.status(404).json({ error: 'Operator not found' })
       }
 
-      // Active dialogs (ASSIGNED to this operator)
-      const activeResult = await pool.query(
+      // Active dialogs (ASSIGNED to this operator) — use tenant-scoped client for RLS
+      const activeResult = await tenantReq.dbClient.query(
         `SELECT COUNT(*)::int AS count FROM conversations.dialogs
          WHERE operator_id = $1 AND status = 'ASSIGNED'`,
         [req.params.id],
       )
 
-      // Closed today
-      const closedResult = await pool.query(
+      // Closed today — use tenant-scoped client for RLS
+      const closedResult = await tenantReq.dbClient.query(
         `SELECT COUNT(*)::int AS count FROM conversations.dialogs
          WHERE operator_id = $1 AND status = 'CLOSED'
            AND updated_at >= CURRENT_DATE`,

@@ -14,6 +14,7 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import { Pool, PoolClient } from 'pg'
+import { getJwtSecret } from '@shared/utils/jwt-secret'
 
 export interface TenantRequest extends Request {
   tenantId: string
@@ -32,7 +33,7 @@ export function createTenantMiddleware(pool: Pool) {
     const token = authHeader.slice(7)
 
     try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET!) as {
+      const payload = jwt.verify(token, getJwtSecret()) as {
         tenantId: string
         operatorId: string
         role: 'ADMIN' | 'OPERATOR'
@@ -41,7 +42,8 @@ export function createTenantMiddleware(pool: Pool) {
       // Acquire a dedicated client for this request's lifetime (FF-03)
       const client = await pool.connect()
       // Set RLS context — persists for all queries on THIS client
-      await client.query(`SET app.tenant_id = '${payload.tenantId}'`)
+      // Use set_config() with parameterized value to prevent SQL injection
+      await client.query('SELECT set_config($1, $2, false)', ['app.tenant_id', payload.tenantId])
 
       // Release client when response finishes (success or error)
       res.on('close', () => {

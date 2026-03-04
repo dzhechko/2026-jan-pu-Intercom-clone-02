@@ -10,6 +10,7 @@ import helmet from 'helmet'
 import { Pool } from 'pg'
 import Redis from 'ioredis'
 import { createTenantMiddleware } from '@shared/middleware/tenant.middleware'
+import { validateJwtSecret } from '@shared/utils/jwt-secret'
 import { createChatRouter } from '@conversation/infrastructure/chat-routes'
 import { registerChatNamespace } from '@conversation/infrastructure/ws-handler'
 import { createPQLRouter } from '@pql/infrastructure/pql-routes'
@@ -44,6 +45,9 @@ import { createAttributionRouter } from '@revenue/infrastructure/attribution-rou
 import { AutoAttributionService } from '@revenue/application/services/auto-attribution-service'
 import { PgAttributionRepository } from '@revenue/infrastructure/repositories/attribution-repository'
 import { createRevenueRouter } from '@revenue/infrastructure/revenue-routes'
+
+// Startup guard: crash early if JWT_SECRET is missing (security requirement)
+validateJwtSecret()
 
 const app = express()
 const httpServer = createServer(app)
