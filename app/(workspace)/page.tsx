@@ -189,6 +189,7 @@ export default function WorkspacePage() {
           <RightPanel
             dialog={selectedDialog}
             operatorId={operator?.id ?? ''}
+            token={token}
             onAssign={handleAssign}
             onClose={handleCloseDialog}
             onChangeStatus={handleChangeStatus}

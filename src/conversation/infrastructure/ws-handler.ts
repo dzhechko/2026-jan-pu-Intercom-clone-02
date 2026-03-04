@@ -24,6 +24,9 @@ import { z } from 'zod'
 import { Pool } from 'pg'
 import { DialogRepository } from './repositories/dialog-repository'
 import { MessageRepository } from './repositories/message-repository'
+import { PQLDetectorService, MessageEvent } from '@pql/application/services/pql-detector-service'
+import { analyzePQLInline } from '@pql/infrastructure/message-consumer'
+import { forwardToTelegramIfNeeded } from '@integration/adapters/telegram-outbound'
 
 // ─── Zod schemas ────────────────────────────────────────────────────────────
 
@@ -56,7 +59,7 @@ const TypingSchema = z.object({
 
 // ─── Handler factory ─────────────────────────────────────────────────────────
 
-export function registerChatNamespace(io: SocketIOServer, pool: Pool): Namespace {
+export function registerChatNamespace(io: SocketIOServer, pool: Pool, pqlDetector?: PQLDetectorService): Namespace {
   const nsp: Namespace = io.of('/chat')
   const dialogRepo = new DialogRepository(pool)
   const messageRepo = new MessageRepository(pool)
@@ -123,6 +126,20 @@ export function registerChatNamespace(io: SocketIOServer, pool: Pool): Namespace
 
         // Broadcast to operators watching this tenant
         nsp.to(`tenant:${tenantId}`).emit('message:new', { message, dialog })
+
+        // BC-02: Trigger PQL analysis on CLIENT messages (non-blocking)
+        if (pqlDetector) {
+          const pqlEvent: MessageEvent = {
+            messageId: message.id,
+            dialogId: dialog.id,
+            tenantId,
+            content,
+            senderType: 'CLIENT',
+          }
+          analyzePQLInline(pqlDetector, nsp, pqlEvent).catch((err) =>
+            console.error('[ws-handler] PQL analysis error', err),
+          )
+        }
       } catch (err) {
         console.error('[ws-handler] client:message error', err)
         socket.emit('error', { code: 'INTERNAL_ERROR' })
@@ -161,6 +178,11 @@ export function registerChatNamespace(io: SocketIOServer, pool: Pool): Namespace
 
         // Echo back to other operators watching this tenant
         nsp.to(`tenant:${tenantId}`).emit('message:new', { message })
+
+        // FR-05: Forward to Telegram if this is a TELEGRAM dialog (fire-and-forget)
+        forwardToTelegramIfNeeded(pool, dialogId, content).catch((err) => {
+          console.error('[ws-handler] telegram forward error', err)
+        })
       } catch (err) {
         console.error('[ws-handler] operator:message error', err)
         socket.emit('error', { code: 'INTERNAL_ERROR' })

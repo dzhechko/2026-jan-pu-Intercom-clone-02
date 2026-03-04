@@ -12,6 +12,16 @@ import Redis from 'ioredis'
 import { createTenantMiddleware } from '@shared/middleware/tenant.middleware'
 import { createChatRouter } from '@conversation/infrastructure/chat-routes'
 import { registerChatNamespace } from '@conversation/infrastructure/ws-handler'
+import { createPQLRouter } from '@pql/infrastructure/pql-routes'
+import { PQLDetectorService } from '@pql/application/services/pql-detector-service'
+import { PgPQLDetectionRepository } from '@pql/infrastructure/repositories/pql-detection-repository'
+import { DialogRepository } from '@conversation/infrastructure/repositories/dialog-repository'
+import { analyzePQLInline } from '@pql/infrastructure/message-consumer'
+import { createTelegramWebhookRouter, createTelegramManagementRouter } from '@integration/infrastructure/telegram-routes'
+import { registerTelegramOutbound } from '@integration/adapters/telegram-outbound'
+import { createMemoryAIRouter } from '@pql/infrastructure/memory-ai-routes'
+import { MemoryAIService } from '@pql/application/services/memory-ai-service'
+import { AmoCRMMCPAdapter } from '@integration/adapters/amocrm-mcp-adapter'
 
 const app = express()
 const httpServer = createServer(app)
@@ -46,11 +56,25 @@ app.get('/api/health', async (_req, res) => {
   }
 })
 
-// Auth middleware for all /api routes (except health)
+// FR-05: Telegram webhook — BEFORE auth middleware (Telegram sends updates directly)
+app.use('/api/webhooks/telegram', createTelegramWebhookRouter(pool, io))
+
+// Auth middleware for all /api routes (except health and webhooks)
 app.use('/api', createTenantMiddleware(pool))
 
 // BC-01: Conversation routes
 app.use('/api/dialogs', createChatRouter(pool))
+
+// BC-02: PQL detection routes
+app.use('/api/pql', createPQLRouter(pool))
+
+// FR-05: Telegram management routes (requires auth)
+app.use('/api/telegram', createTelegramManagementRouter())
+
+// FR-03: Memory AI — CRM context routes
+const crmAdapter = new AmoCRMMCPAdapter(process.env.AMOCRM_MCP_URL || '')
+const memoryAIService = new MemoryAIService(crmAdapter, redis)
+app.use('/api/memory', createMemoryAIRouter(pool, memoryAIService))
 
 // Socket.io namespace per tenant (ADR-005, PO-03)
 io.on('connection', (socket) => {
@@ -63,8 +87,16 @@ io.on('connection', (socket) => {
   }
 })
 
+// BC-02: PQL detector service wiring
+const pqlDetectionRepo = new PgPQLDetectionRepository(pool)
+const dialogRepo = new DialogRepository(pool)
+const pqlDetector = new PQLDetectorService(pqlDetectionRepo, dialogRepo)
+
 // BC-01: /chat namespace — widget + operator real-time messaging
-registerChatNamespace(io, pool)
+const chatNsp = registerChatNamespace(io, pool, pqlDetector)
+
+// FR-05: Telegram outbound — intercept operator replies to TELEGRAM dialogs
+registerTelegramOutbound(io, pool)
 
 // Start server
 const PORT = process.env.API_PORT || 4000

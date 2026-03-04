@@ -108,6 +108,30 @@ export function useDialogs({ token, on }: UseDialogsOptions) {
     return unsub
   }, [on])
 
+  // Real-time: PQL detection — update dialog score and tier
+  useEffect(() => {
+    const unsub = on('pql:detected', (payload: unknown) => {
+      const data = payload as {
+        dialogId?: string
+        score?: number
+        tier?: 'HOT' | 'WARM' | 'COLD'
+        topSignals?: Array<{ type: string; weight: number; matchedText: string }>
+      }
+      if (!data.dialogId) return
+
+      setDialogs((prev) =>
+        sortDialogs(
+          prev.map((d) =>
+            d.id === data.dialogId
+              ? { ...d, pqlScore: data.score, pqlTier: data.tier }
+              : d,
+          ),
+        ),
+      )
+    })
+    return unsub
+  }, [on])
+
   // Real-time: dialog assigned
   useEffect(() => {
     const unsub = on('dialog:assigned', (payload: unknown) => {

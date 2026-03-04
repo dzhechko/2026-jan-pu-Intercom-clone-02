@@ -11,6 +11,7 @@ import { Pool } from 'pg'
 import { TenantRequest } from '@shared/middleware/tenant.middleware'
 import { DialogRepository } from './repositories/dialog-repository'
 import { MessageRepository } from './repositories/message-repository'
+import { forwardToTelegramIfNeeded } from '@integration/adapters/telegram-outbound'
 
 const SendMessageSchema = z.object({
   content: z.string().min(1).max(10_000),
@@ -108,6 +109,11 @@ export function createChatRouter(pool: Pool): Router {
         direction: 'OUTBOUND',
         senderType: parsed.data.senderType,
         content: parsed.data.content,
+      })
+
+      // FR-05: Forward to Telegram if this is a TELEGRAM dialog (fire-and-forget)
+      forwardToTelegramIfNeeded(pool, req.params.id, parsed.data.content).catch((err) => {
+        console.error('[chat-routes] telegram forward error', err)
       })
 
       return res.status(201).json({ message })

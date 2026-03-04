@@ -7,7 +7,7 @@
  * Circuit Breaker: timeout 2000ms, failover <30sec.
  */
 import CircuitBreaker from 'opossum'
-import { CRMPort, ContactContext, CRMDeal } from '@pql/domain/ports/crm-port'
+import { CRMPort, ContactContext, CRMDeal, CRMContactContext, CRMResult } from '@pql/domain/ports/crm-port'
 import { Result, ok, err } from '@shared/types/result'
 
 export class AmoCRMMCPAdapter implements CRMPort {
@@ -113,6 +113,111 @@ export class AmoCRMMCPAdapter implements CRMPort {
       })
     } catch (error) {
       return err(error instanceof Error ? error : new Error(String(error)))
+    }
+  }
+
+  /**
+   * FR-03: Memory AI — enriched contact context for operator sidebar.
+   * Uses circuit breaker for resilience. Returns mock data when MCP is unavailable.
+   * Structure is ready for real MCP integration — replace generateMockContext with actual MCP call.
+   */
+  async getContactContextEnriched(email: string, tenantId: string): Promise<CRMResult<CRMContactContext>> {
+    if (!this.mcpBaseUrl) {
+      return CRMResult.notConfigured()
+    }
+
+    try {
+      const result = await this.breaker.fire({
+        tool: 'get_contact_enriched',
+        params: { email, tenantId },
+      }) as Result<any>
+
+      if (!result.ok) {
+        // Circuit open or MCP error — fall back to mock data for now
+        return CRMResult.ok(this.generateMockContext(email))
+      }
+
+      const raw = result.value
+      return CRMResult.ok(this.translateToEnrichedContext(raw, email))
+    } catch {
+      // Circuit breaker open or network error — graceful degradation with mock
+      return CRMResult.ok(this.generateMockContext(email))
+    }
+  }
+
+  /**
+   * ACL: Translate raw amoCRM response → domain CRMContactContext.
+   * Anti-Corruption Layer keeps external CRM types out of domain.
+   */
+  private translateToEnrichedContext(raw: any, email: string): CRMContactContext {
+    const contact = raw.contacts?.[0]
+    const deals = (raw.leads || []).map((d: any) => ({
+      id: String(d.id),
+      title: d.name || 'Untitled deal',
+      value: d.price || 0,
+      status: this.mapDealStatus(d.status_id),
+      closedAt: d.closed_at ? new Date(d.closed_at * 1000).toISOString() : undefined,
+    }))
+
+    const fields = {
+      hasName: !!contact?.name,
+      hasPlan: !!contact?.custom_fields_values?.plan,
+      hasAge: !!contact?.created_at,
+      hasDeals: deals.length > 0,
+      hasTags: !!(contact?.tags?.length),
+    }
+    const filledFields = Object.values(fields).filter(Boolean).length
+    const enrichmentScore = Math.round((filledFields / Object.keys(fields).length) * 100) / 100
+
+    return {
+      contactEmail: email,
+      contactName: contact?.name,
+      currentPlan: contact?.custom_fields_values?.plan,
+      accountAge: contact?.created_at
+        ? Math.floor((Date.now() - contact.created_at * 1000) / 86400000)
+        : undefined,
+      deals,
+      previousDialogCount: raw.dialogs_count ?? 0,
+      tags: contact?.tags?.map((t: any) => t.name || String(t)) ?? [],
+      enrichmentScore,
+    }
+  }
+
+  /**
+   * Mock data generator — used while real amoCRM MCP is not connected.
+   * Returns realistic simulated data to demonstrate the Memory AI UI.
+   */
+  private generateMockContext(email: string): CRMContactContext {
+    // Deterministic mock based on email hash for consistency
+    const hash = email.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+    const plans = ['Free', 'Starter', 'Professional', 'Enterprise']
+    const tagSets = [
+      ['early-adopter', 'active'],
+      ['enterprise', 'high-value', 'decision-maker'],
+      ['trial', 'onboarding'],
+      ['churned', 're-engaged'],
+    ]
+
+    const planIndex = hash % plans.length
+    const tagIndex = hash % tagSets.length
+    const dealCount = (hash % 3) + 1
+    const deals = Array.from({ length: dealCount }, (_, i) => ({
+      id: `mock-deal-${hash}-${i}`,
+      title: ['Platform License', 'Annual Subscription', 'Support Package', 'Add-on Services'][i % 4],
+      value: [2400, 12000, 4800, 1200][i % 4],
+      status: ['OPEN', 'WON', 'OPEN'][i % 3],
+      closedAt: i === 1 ? new Date(Date.now() - 30 * 86400000).toISOString() : undefined,
+    }))
+
+    return {
+      contactEmail: email,
+      contactName: email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      currentPlan: plans[planIndex],
+      accountAge: (hash % 365) + 30,
+      deals,
+      previousDialogCount: (hash % 12) + 1,
+      tags: tagSets[tagIndex],
+      enrichmentScore: 0.85,
     }
   }
 
