@@ -1,6 +1,10 @@
 # Development Insights — КоммуниК
 
 ## Recent
+- [2026-03-04] **CRITICAL:** RLS Bypass — pool.query() vs req.dbClient.query() — security/CRITICAL
+- [2026-03-04] **CRITICAL:** SQL Injection in SET LOCAL — use set_config() — security/CRITICAL
+- [2026-03-04] **HIGH:** JWT_SECRET needs startup guard — never fallback to weak default — security/HIGH
+- [2026-03-04] Parallel validation + review agents — 6x speedup — tooling/pattern
 - [2026-03-04] **CRITICAL:** Cross-tenant operator assignment — missing tenant ownership check — security/CRITICAL
 - [2026-03-04] **CRITICAL:** AI Template Lossy Compression — COPY, don't summarize templates — tooling/CRITICAL
 - [2026-03-04] **CRITICAL:** /run protocol violation — never bypass skill chain — process/critical-lesson
@@ -26,6 +30,9 @@
 - [Jest config](detail/2026-03-04-jest-config-gotchas.md) — property names, global key, ts-node
 
 ### Security (CRITICAL)
+- [RLS Bypass — pool vs dbClient](detail/2026-03-04-rls-bypass-pool-vs-dbclient.md) — **pool.query() bypasses RLS, use req.dbClient.query()**
+- [SQL Injection in SET LOCAL](detail/2026-03-04-sql-injection-set-local.md) — **use set_config($1, true) instead of string interpolation**
+- [JWT_SECRET startup guard](detail/2026-03-04-jwt-secret-startup-guard.md) — **never fallback to weak default, fail fast at startup**
 - [Cross-tenant assign check](detail/2026-03-04-cross-tenant-assign-check.md) — **verify operator belongs to same tenant before assignment**
 - [Webhook HMAC missing](detail/2026-03-04-webhook-hmac-missing.md) — Telegram + VK Max accept unverified webhooks
 
@@ -47,6 +54,7 @@
 - [Template Lossy Compression](detail/2026-03-04-template-lossy-compression.md) — **COPY templates verbatim, NEVER summarize**
 - [Module files](detail/2026-03-04-modular-skill-modules-must-read.md) — ALWAYS read modules/ directory
 - [P1 checklist](detail/2026-03-04-p1-checklist-validation.md) — audit with Master Validation Checklist
+- [Parallel validation + review](detail/2026-03-04-parallel-validation-review.md) — batch agents on non-overlapping files for 6x speedup
 
 ## Stats
-Total: 14 insights | Most active: tooling (3), integration (3), security (2), testing (2)
+Total: 18 insights | Most active: security (5), tooling (4), integration (3), testing (2)

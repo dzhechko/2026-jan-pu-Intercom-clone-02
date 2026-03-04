@@ -1,0 +1,117 @@
+EXTRACTION COMPLETE: КоммуниК Project Rules & Constraints
+
+Output Location: /workspaces/2026-jan-pu-Intercom-clone-02/docs/EXTRACTED_RULES.md
+
+=== SCAN SUMMARY ===
+Data Sources Analyzed:
+- 25 insight documents (2026-03-04 batch)
+- 12 Architecture Decision Records (ADRs)
+- 8 Fitness Function definitions
+- 5 Refinement & Risk documents
+- 4 Code comment markers (TODO, HACK, FIXME, BUG)
+- Test suites (jest patterns, edge cases)
+
+=== EXTRACTION RESULTS ===
+Total Rules Extracted: 28
+Rules Organized Into: 6 Categories
+
+Distribution:
+- Security (S-01 to S-08):      8 rules
+- Architecture (A-01 to A-06):  6 rules
+- Testing (T-01 to T-04):       4 rules
+- Language (L-01 to L-04):      4 rules
+- Process (P-01 to P-03):       3 rules
+- Infrastructure (I-01 to I-02): 2 rules
+
+=== KEY FINDINGS ===
+
+CRITICAL Rules (15):
+1. S-01: RLS Bypass via shared pool connections
+2. S-02: SQL Injection in SET LOCAL
+3. S-03: Cross-tenant operator assignment vulnerability
+4. S-05: JWT_SECRET must fail fast at startup
+5. S-06: Data residency (no foreign LLM APIs)
+6. S-07: Circuit Breaker on every MCP adapter
+7. A-02: Singleton MCP service instances
+8. A-03: No cross-BC imports
+9. T-01: Jest mocking with TypeScript strict mode
+10. L-01: JavaScript \w doesn't match Cyrillic
+11. P-01: Never bypass skill chain workflow
+12. P-02: Process docs need blocking language
+13. I-02: Modular skills require reading ALL modules
+
+HIGH Rules (10):
+- S-04: Webhook HMAC verification
+- S-08: Rate limiting per endpoint/tenant
+- A-01: Anti-corruption layer non-negotiable
+- A-04: Redis Streams for event communication
+- L-04: AI template lossy compression risk
+- T-04: Master Validation Checklist after generation
+
+MEDIUM/LOW Rules (3):
+- S-08: Rate limiting (MEDIUM severity)
+- P-03: Parallel agent optimization (LOW)
+- I-01: Wave-based parallelization (LOW)
+
+=== UNIVERSALLY APPLICABLE RULES ===
+
+Any DDD/SaaS System Should Adopt:
+- S-01, S-02, S-03, S-04, S-05, S-07, S-08
+- A-01, A-03, A-04
+- T-01
+- L-01
+- P-01, P-02
+
+Total: 15 rules that generalize beyond this project
+
+=== DOCUMENT STRUCTURE ===
+
+EXTRACTED_RULES.md contains:
+- Full rule specifications (Rule, Why, Source, Pattern, Type, Scope, Expiry)
+- Security Rules (8) — RLS, SQL injection, webhooks, data residency, secrets management
+- Architecture Rules (6) — Anti-corruption layer, singletons, modularity, event streaming
+- Testing Rules (4) — Jest strict mode, configuration gotchas, validation checklists
+- Language Rules (4) — Regex i18n, Socket.io adapters, TypeScript gotchas, AI prompting
+- Process Rules (3) — Skill chain enforcement, blocking language, parallelization patterns
+- Infrastructure Rules (2) — Wave-based implementation, modular skills
+- Summary Table (28x5 columns) — cross-reference matrix
+- Lessons by Domain (7 sections) — curated insights for each engineering area
+- Generalization Matrix — which rules apply beyond КоммуниК
+
+=== SOURCES MAPPED ===
+
+All 28 rules are sourced to:
+- Insight documents (18 rules)
+- ADR documentation (6 rules)
+- Project CLAUDE.md rules (4 rules)
+
+None are inferred — all grounded in documented project experience.
+
+=== QUICK REFERENCE: TOP 5 CRITICAL ISSUES FOUND ===
+
+1. **RLS Bypass (S-01)** — Repositories using pool.query() bypass tenant isolation completely
+2. **SQL Injection (S-02)** — SET LOCAL with string interpolation is injectable
+3. **Cross-Tenant Assignment (S-03)** — Operators from other tenants can be assigned to dialogs
+4. **Singleton Circuit Breaker (A-02)** — Per-request MCP service instantiation breaks FF-04
+5. **Process Bypass (P-01)** — Skipping /next → /go → /plan chain results in missing documentation
+
+All have code patterns provided in EXTRACTED_RULES.md.
+
+=== RECOMMENDED NEXT STEPS ===
+
+1. Review docs/EXTRACTED_RULES.md as new project baseline
+2. Add S-01 through S-05 checks to pre-commit hooks
+3. Incorporate A-01 through A-03 into ESLint/architecture validation
+4. Add T-01 through T-04 to CI/CD validation gates
+5. Update team onboarding docs to reference relevant rules
+6. Consider adopting universally-applicable rules in other projects
+
+=== FILE LOCATIONS ===
+
+Main Document:  /workspaces/2026-jan-pu-Intercom-clone-02/docs/EXTRACTED_RULES.md
+This Summary:   /workspaces/2026-jan-pu-Intercom-clone-02/docs/EXTRACTION_SUMMARY.txt
+
+Source Insights: /workspaces/2026-jan-pu-Intercom-clone-02/docs/insights/detail/*.md (25 files)
+Architecture:    /workspaces/2026-jan-pu-Intercom-clone-02/docs/ADR.md
+Fitness Funcs:   /workspaces/2026-jan-pu-Intercom-clone-02/docs/fitness-functions.md
+Refinement:      /workspaces/2026-jan-pu-Intercom-clone-02/docs/refinement.md
