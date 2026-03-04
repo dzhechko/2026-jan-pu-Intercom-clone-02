@@ -58,7 +58,7 @@
       "description": "Auto-load from amoCRM before operator responds: deals, contacts, history. Via amoCRM MCP.",
       "priority": "must",
       "milestone": "M1",
-      "status": "next",
+      "status": "done",
       "bc": ["pql", "integration"],
       "depends_on": ["FR-07"]
     },
@@ -88,7 +88,7 @@
       "description": "Automatic PDF/email monthly: X leads found, Y closed, RUB Z revenue attributed.",
       "priority": "must",
       "milestone": "M2",
-      "status": "planned",
+      "status": "next",
       "bc": ["revenue"],
       "depends_on": ["FR-02", "FR-03"]
     },
