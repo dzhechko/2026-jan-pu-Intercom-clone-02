@@ -62,7 +62,7 @@ The workspace is a three-panel layout:
 
 ### Close a dialog
 
-1. Click the **Close** button in the chat header, or press `Ctrl+W`.
+1. Click the **Close** button in the chat header, or press `Alt+C`.
 2. Optionally add a closing note.
 3. The dialog moves to the Closed section.
 4. If a PQL was detected, revenue attribution is triggered automatically.
@@ -164,7 +164,7 @@ Quick replies can be customized by administrators via Settings.
 | `Ctrl+Enter` | Assign selected dialog to yourself |
 | `Enter` | Send message |
 | `Shift+Enter` | New line in message input |
-| `Ctrl+W` | Close current dialog |
+| `Alt+C` | Close current dialog |
 | `Ctrl+K` | Open search |
 | `Ctrl+/` | Show keyboard shortcuts help |
 | `Alt+1..5` | Insert quick reply template |

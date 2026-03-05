@@ -108,7 +108,7 @@ Panel widths can be adjusted by dragging the dividers. Double-click a divider to
 | `Enter` | Chat input | Send message |
 | `Shift+Enter` | Chat input | New line |
 | `Ctrl+Enter` | Dialog list | Assign selected dialog to yourself |
-| `Ctrl+W` | Chat panel | Close current dialog |
+| `Alt+C` | Chat panel | Close current dialog |
 | `Ctrl+K` | Global | Open search |
 | `Ctrl+/` | Global | Show keyboard shortcuts overlay |
 | `Ctrl+N` | Global | Focus message input |

@@ -31,7 +31,7 @@ A website visitor initiates a support dialog through the chat widget.
 16. Conversation continues until resolved
        |
        v
-17. Operator clicks Close (or Ctrl+W)
+17. Operator clicks Close (or Alt+C)
 18. Dialog status changes to CLOSED
 19. DialogClosed event emitted
 ```
